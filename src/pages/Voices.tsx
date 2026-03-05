@@ -1,0 +1,286 @@
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Search, X, Mic2, SlidersHorizontal, Volume2, Loader2 } from "lucide-react";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { VoiceCard } from "@/components/VoiceCard";
+import { useAudioPlayer } from "@/hooks/use-audio-player";
+import { usePublicVoices } from "@/hooks/use-voice-queries";
+import {
+  ACCENT_OPTIONS,
+  GENDER_OPTIONS,
+  type Voice,
+  type VoiceAccent,
+  type VoiceGender,
+} from "@/data/voices";
+
+// ── animation variants ──────────────────────────────────────────────────────
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.025 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 8 },
+  show:  { opacity: 1, y: 0 },
+};
+
+export default function Voices() {
+  const [search,          setSearch]          = useState("");
+  const [accentFilters,   setAccentFilters]   = useState<Set<VoiceAccent>>(new Set());
+  const [genderFilters,   setGenderFilters]   = useState<Set<VoiceGender>>(new Set());
+  const { isPlaying, stop } = useAudioPlayer();
+
+  // ── API data ──────────────────────────────────────────────────────────
+  const { data: apiVoices = [], isLoading } = usePublicVoices();
+
+  /** Map API VoiceEntry → Voice (camelCase props expected by VoiceCard). */
+  const voices: Voice[] = useMemo(
+    () =>
+      apiVoices.map((v) => ({
+        speakerId:   v.speaker_id,
+        displayName: v.display_name,
+        gender:      v.gender as VoiceGender,
+        accent:      v.accent as VoiceAccent,
+        sampleUrl:   v.sample_url,
+      })),
+    [apiVoices],
+  );
+
+  // ── filtering ────────────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return voices.filter((v) => {
+      if (q && !v.displayName.toLowerCase().includes(q) &&
+               !v.accent.toLowerCase().includes(q) &&
+               !v.gender.toLowerCase().includes(q)) return false;
+      if (accentFilters.size > 0 && !accentFilters.has(v.accent)) return false;
+      if (genderFilters.size > 0 && !genderFilters.has(v.gender)) return false;
+      return true;
+    });
+  }, [search, accentFilters, genderFilters]);
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+  function toggleAccent(accent: VoiceAccent) {
+    setAccentFilters((prev) => {
+      const next = new Set(prev);
+      next.has(accent) ? next.delete(accent) : next.add(accent);
+      return next;
+    });
+  }
+
+  function toggleGender(gender: VoiceGender) {
+    setGenderFilters((prev) => {
+      const next = new Set(prev);
+      next.has(gender) ? next.delete(gender) : next.add(gender);
+      return next;
+    });
+  }
+
+  const hasFilters = search.trim() || accentFilters.size > 0 || genderFilters.size > 0;
+
+  function clearAll() {
+    setSearch("");
+    setAccentFilters(new Set());
+    setGenderFilters(new Set());
+  }
+
+  const activeFilterCount = accentFilters.size + genderFilters.size;
+
+  return (
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="flex flex-col h-full p-4 sm:p-6 gap-6"
+    >
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-end gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <Volume2 className="h-5 w-5 text-primary" />
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Audio Library
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {voices.length} voice profiles across{" "}
+            {ACCENT_OPTIONS.length} accents · Click <strong>Play Sample</strong> to
+            preview · Powered by Coqui VCTK VITS
+          </p>
+        </div>
+
+        {isPlaying && (
+          <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={stop}>
+            <Mic2 className="h-3.5 w-3.5 animate-pulse text-primary" />
+            Stop Playback
+          </Button>
+        )}
+      </motion.div>
+
+      {/* ── Search + Filter bar ─────────────────────────────────────────────── */}
+      <motion.div variants={item} className="flex flex-wrap items-center gap-2">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search voices…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9"
+          />
+          {search && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearch("")}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+
+        {/* Accent filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-2">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge className="h-4 min-w-4 px-1 text-[10px] ml-0.5">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+              Gender
+            </DropdownMenuLabel>
+            {GENDER_OPTIONS.map((g) => (
+              <DropdownMenuCheckboxItem
+                key={g}
+                checked={genderFilters.has(g)}
+                onCheckedChange={() => toggleGender(g)}
+              >
+                {g}
+              </DropdownMenuCheckboxItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+              Accent
+            </DropdownMenuLabel>
+            {ACCENT_OPTIONS.map((a) => (
+              <DropdownMenuCheckboxItem
+                key={a}
+                checked={accentFilters.has(a)}
+                onCheckedChange={() => toggleAccent(a)}
+              >
+                {a}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Active filter chips */}
+        {[...accentFilters].map((a) => (
+          <Badge
+            key={a}
+            variant="secondary"
+            className="gap-1 cursor-pointer hover:bg-muted"
+            onClick={() => toggleAccent(a)}
+          >
+            {a}
+            <X className="h-3 w-3" />
+          </Badge>
+        ))}
+        {[...genderFilters].map((g) => (
+          <Badge
+            key={g}
+            variant="secondary"
+            className="gap-1 cursor-pointer hover:bg-muted"
+            onClick={() => toggleGender(g)}
+          >
+            {g}
+            <X className="h-3 w-3" />
+          </Badge>
+        ))}
+
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 text-muted-foreground hover:text-foreground ml-auto"
+            onClick={clearAll}
+          >
+            Clear all
+          </Button>
+        )}
+      </motion.div>
+
+      {/* ── Results count ───────────────────────────────────────────────────── */}
+      {isLoading ? (
+        <motion.div
+          variants={item}
+          className="flex flex-col items-center justify-center py-24 text-center gap-3"
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-medium text-muted-foreground">Loading voices…</p>
+        </motion.div>
+      ) : (
+        <>
+          <motion.p variants={item} className="text-xs text-muted-foreground -mt-3">
+            {filtered.length === voices.length
+              ? `All ${voices.length} voices`
+              : `${filtered.length} of ${voices.length} voices`}
+          </motion.p>
+
+          {/* ── Voice Grid ──────────────────────────────────────────────────────── */}
+          {filtered.length > 0 ? (
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-6"
+        >
+          {filtered.map((voice) => (
+            <motion.div key={voice.speakerId} variants={item}>
+              <VoiceCard voice={voice} />
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : hasFilters ? (
+        <motion.div
+          variants={item}
+          className="flex flex-col items-center justify-center py-24 text-center gap-3"
+        >
+          <Mic2 className="h-10 w-10 text-muted-foreground/40" />
+          <p className="text-sm font-medium text-muted-foreground">No voices match your filters</p>
+          <Button variant="ghost" size="sm" onClick={clearAll}>
+            Clear filters
+          </Button>
+        </motion.div>
+      ) : (
+        <motion.div
+          variants={item}
+          className="flex flex-col items-center justify-center py-24 text-center gap-3"
+        >
+          <Mic2 className="h-10 w-10 text-muted-foreground/40" />
+          <p className="text-sm font-medium text-muted-foreground">No voices available</p>
+        </motion.div>
+      )}
+        </>
+      )}
+    </motion.div>
+  );
+}
