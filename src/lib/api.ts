@@ -7,8 +7,9 @@ import { authenticatedFetch } from "@/lib/auth";
  * - Throws on non-2xx (and authenticatedFetch handles 401 redirect)
  *
  * In development the Vite dev-server proxy forwards all backend paths to
- * localhost:8000, so DEFAULT_API_URL is an empty string (relative URLs).
- * In production, set VITE_API_URL to the deployed backend origin.
+ * localhost:8000, so VITE_API_URL is left empty and relative URLs are used.
+ * In production VITE_API_URL=https://voiceagent.rebortai.com is baked in
+ * at build time (set in sound-weave-nexus/.env).
  */
 
 const DEFAULT_API_URL = "";

@@ -69,13 +69,13 @@ class SalesAgentApp {
         // Client-side deduplication to prevent race conditions
         this.recentAudioHashes = new Map();
 
-        // Use the config.js configuration instead of hardcoded URLs
-        this.config = window.config || {
+        // Use the config.js configuration — production points to Cloudflare domain
+        this.config = window.appConfig || window.config || {
             apiUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? 'http://localhost:8000'
+                ? window.location.origin
                 : 'https://voiceagent.rebortai.com',
             wsUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? 'ws://localhost:8000'
+                ? window.location.origin.replace(/^https/, 'wss').replace(/^http/, 'ws')
                 : 'wss://voiceagent.rebortai.com'
         };
     }
