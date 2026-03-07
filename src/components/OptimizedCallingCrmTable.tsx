@@ -77,12 +77,12 @@ export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
         <span
           className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
             row.leadstatus === "completed"
-              ? "bg-green-500/10 text-green-500"
+              ? "bg-primary/10 text-primary"
               : row.leadstatus === "failed"
-              ? "bg-red-500/10 text-red-500"
+              ? "bg-destructive/10 text-destructive"
               : row.leadstatus === "calling"
-              ? "bg-blue-500/10 text-blue-500"
-              : "bg-gray-500/10 text-gray-500"
+              ? "bg-accent/10 text-accent-foreground"
+              : "bg-muted text-muted-foreground"
           }`}
         >
           {row.leadstatus || "pending"}
@@ -279,11 +279,11 @@ export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
       {/* Feature indicator */}
       <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg border border-border">
         <div className="flex items-center gap-2">
-          <span className="text-green-500">✓</span>
+          <span className="text-primary">✓</span>
           <span className="text-sm font-medium">Column DnD Enabled</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-green-500">✓</span>
+          <span className="text-primary">✓</span>
           <span className="text-sm font-medium">Optimistic Updates Active</span>
         </div>
       </div>
@@ -299,8 +299,8 @@ export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
       />
       
       {/* Performance notes */}
-      <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-        <p className="text-sm font-medium text-blue-500 mb-2">Performance Tips:</p>
+      <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+        <p className="text-sm font-medium text-primary mb-2">Performance Tips:</p>
         <ul className="text-xs text-muted-foreground space-y-1">
           <li>• Drag columns by the grip handle (⋮⋮) - text selection works normally</li>
           <li>• Notes save instantly with optimistic UI - no waiting for server</li>

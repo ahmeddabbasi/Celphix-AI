@@ -9,6 +9,7 @@ import { PaygLayout } from "@/components/layout/payg/PaygLayout";
 import { ProtectedRoute, CCProtectedRoute } from "@/components/ProtectedRoute";
 import { useInactivityTimeout } from "@/hooks/use-inactivity-timeout";
 import { clearAuthToken } from "@/lib/auth";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // ── Command Center pages ───────────────────────────────────────────────────────
 import Dashboard from "./pages/Dashboard";
@@ -133,15 +134,17 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID as string ?? ""}>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </GoogleOAuthProvider>
 );
 
 export default App;

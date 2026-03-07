@@ -153,8 +153,8 @@ export default function PaygSettings() {
         {/* Header */}
         <motion.div variants={item}>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15">
-              <Zap className="h-5 w-5 text-amber-500" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15">
+              <Zap className="h-5 w-5 text-accent-foreground" />
             </div>
             <div>
               <h1 className="text-2xl font-semibold">Settings</h1>
@@ -166,13 +166,13 @@ export default function PaygSettings() {
         {/* ── Command Center Access ─────────────────────────────────────────── */}
         {showRequestCard && (
           <motion.div variants={item}>
-            <Card className="border-amber-500/30 bg-amber-500/[0.02]">
+            <Card className="border-accent/30 bg-accent/[0.02]">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4 text-amber-500" />
+                  <Monitor className="h-4 w-4 text-accent-foreground" />
                   <CardTitle className="text-base">Command Center Access</CardTitle>
                   {ccStatus === "pending" && (
-                    <Badge variant="outline" className="border-amber-400/40 text-amber-600 bg-amber-500/10 ml-auto">
+                    <Badge variant="outline" className="border-accent/40 text-accent-foreground bg-accent/10 ml-auto">
                       <Clock className="h-3 w-3 mr-1" /> Pending Review
                     </Badge>
                   )}
@@ -201,7 +201,7 @@ export default function PaygSettings() {
                       onChange={(e) => setRequestMessage(e.target.value)}
                       placeholder="Briefly explain why you need Command Center access…"
                       rows={3}
-                      className="resize-none border-amber-500/20 focus-visible:ring-amber-500/40"
+                      className="resize-none border-border focus-visible:ring-primary/40"
                     />
                   </div>
                   <div className="flex justify-end">
@@ -209,7 +209,7 @@ export default function PaygSettings() {
                       size="sm"
                       onClick={handleSubmitRequest}
                       disabled={submittingReq || profileLoading}
-                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       {submittingReq
                         ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -226,11 +226,11 @@ export default function PaygSettings() {
         {/* CC access already granted banner */}
         {(ccAccess || isAdmin) && (
           <motion.div variants={item}>
-            <Card className="border-green-500/20 bg-green-500/[0.02]">
+            <Card className="border-primary/20 bg-primary/[0.02]">
               <CardContent className="flex items-center gap-3 pt-4">
-                <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+                <CheckCircle className="h-5 w-5 text-primary shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                  <p className="text-sm font-medium text-primary">
                     Command Center access is active
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -247,15 +247,15 @@ export default function PaygSettings() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-amber-500" />
+                <User className="h-4 w-4 text-primary" />
                 <CardTitle className="text-base">Profile</CardTitle>
               </div>
               <CardDescription>Update your personal information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-                  <User className="h-7 w-7 text-amber-500" />
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <User className="h-7 w-7 text-primary" />
                 </div>
                 <div>
                   {profileLoading ? (
@@ -282,7 +282,7 @@ export default function PaygSettings() {
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your name"
                   disabled={profileLoading}
-                  className="border-amber-500/20 focus-visible:ring-amber-500/40"
+                  className="border-border focus-visible:ring-primary/40"
                 />
                 <p className="text-xs text-muted-foreground">
                   Shown across the platform. Username ({username || "…"}) cannot be changed.
@@ -294,7 +294,7 @@ export default function PaygSettings() {
                   size="sm"
                   onClick={handleSaveProfile}
                   disabled={savingProfile || profileLoading}
-                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {savingProfile
                     ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -311,7 +311,7 @@ export default function PaygSettings() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <Lock className="h-4 w-4 text-amber-500" />
+                <Lock className="h-4 w-4 text-primary" />
                 <CardTitle className="text-base">Password</CardTitle>
               </div>
               <CardDescription>Change your account password.</CardDescription>
@@ -326,7 +326,7 @@ export default function PaygSettings() {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pr-10 border-amber-500/20 focus-visible:ring-amber-500/40"
+                    className="pr-10 border-border focus-visible:ring-primary/40"
                   />
                   <button
                     type="button"
@@ -348,7 +348,7 @@ export default function PaygSettings() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Min. 8 characters"
-                      className="pr-10 border-amber-500/20 focus-visible:ring-amber-500/40"
+                      className="pr-10 border-border focus-visible:ring-primary/40"
                     />
                     <button
                       type="button"
@@ -367,7 +367,7 @@ export default function PaygSettings() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
-                    className="border-amber-500/20 focus-visible:ring-amber-500/40"
+                    className="border-border focus-visible:ring-primary/40"
                   />
                 </div>
               </div>
@@ -377,7 +377,7 @@ export default function PaygSettings() {
                   size="sm"
                   onClick={handleChangePassword}
                   disabled={savingPassword}
-                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {savingPassword
                     ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />

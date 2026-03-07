@@ -166,12 +166,12 @@ export default function Crm() {
         <span
           className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
             row.leadstatus === "completed"
-              ? "bg-green-500/10 text-green-500"
+              ? "bg-primary/10 text-primary"
               : row.leadstatus === "failed"
-              ? "bg-red-500/10 text-red-500"
+              ? "bg-destructive/10 text-destructive"
               : row.leadstatus === "calling"
-              ? "bg-blue-500/10 text-blue-500"
-              : "bg-gray-500/10 text-gray-500"
+              ? "bg-accent/10 text-accent-foreground"
+              : "bg-muted text-muted-foreground"
           }`}
         >
           {row.leadstatus || "pending"}

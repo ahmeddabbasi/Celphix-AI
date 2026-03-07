@@ -1,250 +1,409 @@
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Phone,
+  PhoneCall,
+  PhoneOff,
+  Mic,
+  ArrowRight,
+  RefreshCw,
+  Users,
+  TrendingUp,
+  Bookmark,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { api } from "../lib/api";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
+import { voices } from "@/data/voices";
 
-type AgentListItem = {
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+type AssistantStat = {
   assistant_id: number;
-  assistant_name: string | null;
+  display_name: string;
   agent_key: string | null;
-  user_id: number | null;
+  speaker_id: string | null;
   is_active: boolean;
-  created_at: string | null;
+  linked_number: string | null;
+  linked_number_label: string | null;
+  total_calls: number;
+  session_calls: number;
+  leads_booked: number;
+  is_in_call: boolean;
 };
 
-type Row = {
-  id: string;
-  name: string;
-  userId?: number | null;
-  isActive: boolean;
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function speakerName(speaker_id: string | null): string {
+  if (!speaker_id) return "No voice";
+  const v = voices.find((v) => v.speakerId === speaker_id);
+  return v ? `${v.displayName} (${v.accent})` : speaker_id;
+}
+
+// ─── Animation variants ───────────────────────────────────────────────────────
 
 const container = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.03 },
-  },
+  show: { opacity: 1, transition: { staggerChildren: 0.04 } },
 };
 
-const item = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0 },
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
 };
 
-export default function Assistants() {
+// ─── Active Call Card ─────────────────────────────────────────────────────────
+
+function ActiveCallCard({ a }: { a: AssistantStat }) {
+  const navigate = useNavigate();
+  return (
+    <motion.div
+      layout
+      variants={fadeUp}
+      whileHover={{ scale: 1.02 }}
+      onClick={() => navigate(`/assistants/${a.assistant_id}`)}
+      className={cn(
+        "relative flex-shrink-0 w-44 h-44 rounded-2xl border cursor-pointer",
+        "bg-gradient-to-br from-primary/10 to-card",
+        "border-primary/40 shadow-lg shadow-primary/10",
+        "flex flex-col justify-between p-4 overflow-hidden",
+      )}
+    >
+      {/* Pulsing live indicator */}
+      <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+      </span>
+
+      <div>
+        <PhoneCall className="h-5 w-5 text-primary mb-2" />
+        <p className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
+          {a.display_name}
+        </p>
+      </div>
+
+      <div className="space-y-1">
+        <StatPill icon={<TrendingUp className="h-3 w-3" />} label={`${a.total_calls} total`} />
+        <StatPill icon={<Phone className="h-3 w-3" />} label={`${a.session_calls} this session`} />
+        <StatPill icon={<Bookmark className="h-3 w-3" />} label={`${a.leads_booked} leads`} />
+      </div>
+    </motion.div>
+  );
+}
+
+function StatPill({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] text-primary/80">
+      {icon}
+      <span>{label}</span>
+    </div>
+  );
+}
+
+// ─── Assistant Row ────────────────────────────────────────────────────────────
+
+function AssistantRow({ a, index }: { a: AssistantStat; index: number }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [newAgentKey, setNewAgentKey] = useState("");
-  const [newScriptText, setNewScriptText] = useState("");
-  const { toast } = useToast();
 
-  const agentsQ = useQuery({
-    queryKey: ["assistants", "list"],
-    queryFn: () => api.dashboard.assistants(),
-    // Assistants list changes infrequently; keep it fresh enough but avoid refetch-on-every-nav.
-    staleTime: 60_000,
-    gcTime: 15 * 60_000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
-    retry: 1,
-  });
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(a.display_name);
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const agents = agentsQ.data?.assistants ?? [];
-  const error = (agentsQ.error as any)?.message ?? null;
-  const loading = agentsQ.isPending;
-  const isRefreshing = agentsQ.isFetching && !agentsQ.isPending;
-
-  async function reloadAgents() {
-    try {
-      await agentsQ.refetch();
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to load agents";
-      toast({ variant: "destructive", title: "Agents", description: msg });
-    }
+  function startEdit(e: React.MouseEvent) {
+    e.stopPropagation();
+    setDraftName(a.display_name);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
   }
 
-  async function createAssistant() {
-    const agent_key = newAgentKey.trim();
-    const script_text = newScriptText.trim();
+  function cancelEdit(e?: React.MouseEvent | React.KeyboardEvent) {
+    e?.stopPropagation();
+    setEditing(false);
+    setDraftName(a.display_name);
+  }
 
-    if (!agent_key || !script_text) {
-      toast({
-        variant: "destructive",
-        title: "New Assistant",
-        description: "Agent key and script text are required",
-      });
+  async function commitEdit(e?: React.MouseEvent | React.KeyboardEvent) {
+    e?.stopPropagation();
+    const trimmed = draftName.trim();
+    if (!trimmed || trimmed === a.display_name) {
+      setEditing(false);
       return;
     }
-
-    setCreating(true);
+    setSaving(true);
     try {
-      const created = await api.dashboard.createAssistant({ agent_key, script_text });
-      toast({ title: "New Assistant", description: "Assistant created" });
-      setNewAgentKey("");
-      setNewScriptText("");
-
-      // Refresh the list quickly; keep UI responsive by updating cache and then invalidating.
-      queryClient.invalidateQueries({ queryKey: ["assistants", "list"] });
-
-      const newId = String(created?.assistant?.assistant_id ?? "");
-      if (newId) navigate(`/assistants/${newId}`);
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to create assistant";
-      toast({ variant: "destructive", title: "New Assistant", description: msg });
+      await api.dashboard.renameAssistant(a.assistant_id, trimmed);
+      setEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["assistants", "with-stats"] });
+    } catch {
+      // leave editing open on error
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   }
 
-  const rows = useMemo<Row[]>(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return (agents ?? [])
-      .map((a) => ({
-        id: String(a.assistant_id),
-        name: a.assistant_name ?? a.agent_key ?? `Assistant #${a.assistant_id}`,
-        userId: a.user_id,
-        isActive: Boolean(a.is_active),
-      }))
-      .filter((r) => (q ? r.name.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) : true));
-  }, [agents, searchQuery]);
+  return (
+    <motion.div
+      variants={fadeUp}
+      custom={index}
+      className={cn(
+        "group flex items-center gap-4 px-5 py-4",
+        "border-b border-border last:border-b-0",
+        "hover:bg-muted/40 transition-colors duration-150",
+        !editing && "cursor-pointer",
+      )}
+      onClick={() => !editing && navigate(`/assistants/${a.assistant_id}`)}
+    >
+      {/* Status dot */}
+      <span
+        className={cn(
+          "mt-0.5 flex-shrink-0 h-2 w-2 rounded-full",
+          a.is_in_call ? "bg-primary animate-pulse" : a.is_active ? "bg-muted-foreground/40" : "bg-destructive/50",
+        )}
+      />
+
+      {/* Name + agent key — with inline edit */}
+      <div className="min-w-0 flex-1 flex items-center gap-2">
+        {editing ? (
+          <div className="flex items-center gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+            <Input
+              ref={inputRef}
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitEdit(e);
+                if (e.key === "Escape") cancelEdit(e);
+              }}
+              onBlur={() => commitEdit()}
+              className="h-7 py-0 px-2 text-sm font-medium bg-muted/60 border-primary/40 focus-visible:ring-1 focus-visible:ring-primary"
+              disabled={saving}
+              autoFocus
+            />
+            <button
+              onMouseDown={(e) => { e.preventDefault(); commitEdit(e); }}
+              className="p-1 rounded text-primary hover:bg-primary/10 transition-colors shrink-0"
+              disabled={saving}
+            >
+              <Check className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onMouseDown={(e) => { e.preventDefault(); cancelEdit(e); }}
+              className="p-1 rounded text-muted-foreground hover:bg-muted transition-colors shrink-0"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="min-w-0 flex items-center gap-2 group/name">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{a.display_name}</p>
+              <p className="text-xs text-muted-foreground font-mono truncate">{a.agent_key ?? "—"}</p>
+            </div>
+            <button
+              onClick={startEdit}
+              className="opacity-0 group-hover/name:opacity-100 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0"
+              title="Rename"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Speaker */}
+      <div className="hidden sm:flex items-center gap-1.5 w-44 shrink-0">
+        <Mic className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+        <span className="text-xs text-muted-foreground truncate">{speakerName(a.speaker_id)}</span>
+      </div>
+
+      {/* Linked number */}
+      <div className="hidden md:flex items-center gap-1.5 w-44 shrink-0">
+        {a.linked_number ? (
+          <>
+            <Phone className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+            <span className="text-xs text-muted-foreground truncate">
+              {a.linked_number_label ? `${a.linked_number_label} · ` : ""}
+              {a.linked_number}
+            </span>
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground/40 italic">No number linked</span>
+        )}
+      </div>
+
+      {/* Call badge */}
+      <div className="shrink-0 w-20 text-right">
+        {a.is_in_call ? (
+          <Badge className="bg-primary/15 text-primary border-primary/40 text-[11px] py-0.5">
+            Live
+          </Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground">{a.total_calls} calls</span>
+        )}
+      </div>
+
+      {!editing && (
+        <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function Assistants() {
+  const { data, isPending, isFetching, isError, error, refetch } = useQuery({
+    queryKey: ["assistants", "with-stats"],
+    queryFn: () => api.dashboard.assistantsWithStats(),
+    staleTime: 15_000,
+    refetchInterval: 20_000,   // auto-refresh every 20 s to keep "live" status fresh
+    refetchOnWindowFocus: true,
+  });
+
+  const assistants: AssistantStat[] = data?.assistants ?? [];
+  const quota = data?.quota ?? 0;
+  const activeNow = assistants.filter((a) => a.is_in_call);
+  const isRefreshing = isFetching && !isPending;
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      <motion.div variants={item} className="flex items-center justify-between gap-4">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <motion.div variants={fadeUp} className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Assistants</h1>
-          <p className="text-sm text-muted-foreground">Agents loaded from the backend</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={reloadAgents} disabled={loading || isRefreshing}>
-            {isRefreshing ? "Refreshing…" : "Refresh"}
-          </Button>
-          <Button onClick={createAssistant} disabled={creating}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Assistant
-          </Button>
-        </div>
-      </motion.div>
-
-      <motion.div variants={item} className="grid gap-3 rounded-lg border border-border bg-card p-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Agent key (assistant name)</p>
-          <Input
-            placeholder="e.g. ahmed-sales"
-            value={newAgentKey}
-            onChange={(e) => setNewAgentKey(e.target.value)}
-            className="bg-muted/50 border-0"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Script text</p>
-          <textarea
-            value={newScriptText}
-            onChange={(e) => setNewScriptText(e.target.value)}
-            placeholder="Paste the sales script here..."
-            className="min-h-[120px] w-full rounded-md bg-muted/50 px-3 py-2 text-sm text-foreground outline-none"
-          />
-          <p className="text-xs text-muted-foreground">
-            Backend will auto-fill defaults and enforce: agent key must be unique per user.
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {quota > 0
+              ? `${assistants.length} of ${quota} assistant${quota !== 1 ? "s" : ""} provisioned`
+              : "No quota assigned — contact your admin"}
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isPending || isFetching}
+          className="gap-2"
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+          {isRefreshing ? "Refreshing…" : "Refresh"}
+        </Button>
       </motion.div>
 
-      <motion.div variants={item} className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search agents..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 bg-muted/50 border-0"
-        />
-      </motion.div>
+      {/* ── Error ───────────────────────────────────────────────────────── */}
+      {isError && (
+        <motion.div variants={fadeUp}>
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-5 py-4 text-sm text-destructive">
+            {(error as Error)?.message ?? "Failed to load assistants"}
+          </div>
+        </motion.div>
+      )}
 
-      <motion.div variants={item} className="rounded-lg border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent border-border">
-              <TableHead>Name</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[60px]" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {error ? (
-              <TableRow className="border-border">
-                <TableCell colSpan={4} className="py-10 text-center">
-                  <p className="text-sm text-muted-foreground">{error}</p>
-                </TableCell>
-              </TableRow>
-            ) : loading ? (
-              Array.from({ length: 8 }).map((_, idx) => (
-                <TableRow key={`sk-${idx}`} className="border-border">
-                  <TableCell>
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-48" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  <TableCell />
-                </TableRow>
-              ))
-            ) : rows.length === 0 ? (
-              <TableRow className="border-border">
-                <TableCell colSpan={4} className="py-10 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No agents found.
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((r) => (
-                <TableRow key={r.id} className="border-border">
-                  <TableCell>
-                    <Link
-                      to={`/assistants/${r.id}`}
-                      className="font-medium text-foreground hover:text-primary transition-colors"
-                    >
-                      {r.name}
-                    </Link>
-                    <p className="text-xs text-muted-foreground font-mono">{r.id}</p>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-mono">{r.userId ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{r.isActive ? "Active" : "Inactive"}</TableCell>
-                  <TableCell />
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </motion.div>
+      {/* ── Upper half — Active Now ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {(isPending || activeNow.length > 0) && (
+          <motion.section
+            key="active-section"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+            exit={{ opacity: 0 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <PhoneCall className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Active Now</h2>
+              {!isPending && (
+                <Badge className="bg-primary/15 text-primary border-primary/40 text-[11px] py-0 px-2">
+                  {activeNow.length} live
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted/50">
+              {isPending
+                ? Array.from({ length: 2 }).map((_, i) => (
+                    <Skeleton key={i} className="flex-shrink-0 w-44 h-44 rounded-2xl" />
+                  ))
+                : activeNow.length === 0
+                ? (
+                    <p className="text-xs text-muted-foreground italic py-1">No assistants currently on a call</p>
+                  )
+                : activeNow.map((a) => <ActiveCallCard key={a.assistant_id} a={a} />)}
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
+
+      {/* ── Lower half — All Assistants ──────────────────────────────────── */}
+      <motion.section variants={fadeUp} className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-foreground">Your Assistants</h2>
+          {!isPending && (
+            <span className="text-xs text-muted-foreground">{assistants.length} total</span>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          {/* Column headers */}
+          <div className="flex items-center gap-4 px-5 py-2.5 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <span className="w-2 shrink-0" />
+            <span className="flex-1">Name</span>
+            <span className="hidden sm:block w-44 shrink-0">Voice</span>
+            <span className="hidden md:block w-44 shrink-0">Linked Number</span>
+            <span className="w-20 shrink-0 text-right">Calls</span>
+            <span className="w-4 shrink-0" />
+          </div>
+
+          {isPending ? (
+            <div className="divide-y divide-border">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <Skeleton className="h-2 w-2 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="hidden sm:block h-3 w-28" />
+                  <Skeleton className="hidden md:block h-3 w-32" />
+                  <Skeleton className="h-3 w-12 ml-auto" />
+                  <Skeleton className="h-4 w-4 shrink-0" />
+                </div>
+              ))}
+            </div>
+          ) : assistants.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              {quota === 0 ? (
+                <>
+                  <PhoneOff className="h-8 w-8 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">No assistants available</p>
+                  <p className="text-xs text-muted-foreground/60">Your admin hasn't assigned a quota yet</p>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-8 w-8 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">Provisioning assistants…</p>
+                </>
+              )}
+            </div>
+          ) : (
+            <motion.div variants={container} initial="hidden" animate="show">
+              {assistants.map((a, idx) => (
+                <AssistantRow key={a.assistant_id} a={a} index={idx} />
+              ))}
+            </motion.div>
+          )}
+        </div>
+      </motion.section>
     </motion.div>
   );
 }

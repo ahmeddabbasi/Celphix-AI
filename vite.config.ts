@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => ({
       "/api":         { target: "http://localhost:8000", changeOrigin: true, proxyTimeout: 10000, timeout: 10000 },
       "/login":       { target: "http://localhost:8000", changeOrigin: true, proxyTimeout: 10000, timeout: 10000 },
       "/logout":      { target: "http://localhost:8000", changeOrigin: true, proxyTimeout: 10000, timeout: 10000 },
+      "/auth":        { target: "http://localhost:8000", changeOrigin: true, proxyTimeout: 10000, timeout: 10000 },
       "/ws":          { target: "ws://localhost:8000",   ws: true, changeOrigin: true },
       "/dashboard":   { target: "http://localhost:8000", changeOrigin: true, proxyTimeout: 10000, timeout: 10000 },
       "/analytics":   { target: "http://localhost:8000", changeOrigin: true, proxyTimeout: 10000, timeout: 10000 },

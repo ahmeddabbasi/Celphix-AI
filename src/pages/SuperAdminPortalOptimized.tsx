@@ -614,13 +614,13 @@ export default function SuperAdminPortal() {
                         ) : user.command_center_access ? (
                           <div className="flex flex-col gap-1">
                             <Badge variant="secondary" className="w-fit text-[10px]">Pay-As-You-Go</Badge>
-                            <Badge variant="default" className="w-fit text-[10px] bg-green-600 hover:bg-green-600">Command Center</Badge>
+                            <Badge variant="default" className="w-fit text-[10px] bg-primary hover:bg-primary">Command Center</Badge>
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1">
                             <Badge variant="secondary" className="w-fit text-[10px]">Pay-As-You-Go</Badge>
                             {user.cc_request_status === "pending" && (
-                              <Badge variant="outline" className="w-fit text-[10px] border-amber-500/40 text-amber-600">CC Pending</Badge>
+                              <Badge variant="outline" className="w-fit text-[10px] border-accent/40 text-accent-foreground">CC Pending</Badge>
                             )}
                             {user.cc_request_status === "rejected" && (
                               <Badge variant="outline" className="w-fit text-[10px] border-red-500/40 text-red-600">CC Rejected</Badge>
@@ -666,7 +666,7 @@ export default function SuperAdminPortal() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              className="text-primary hover:text-primary hover:bg-primary/10"
                               disabled={revokeUserCCAccessMutation.isPending}
                               title={`Revoke Command Center access for ${user.username}`}
                               onClick={() => handleRevokeCC(user)}

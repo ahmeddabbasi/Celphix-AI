@@ -86,17 +86,17 @@ export function PaygSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-amber-900/20 bg-amber-950/5">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       {/* Brand header */}
-      <SidebarHeader className="border-b border-amber-900/20 px-4 py-4">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15">
-            <Zap className="h-4 w-4 text-amber-500" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15">
+            <Zap className="h-4 w-4 text-accent-foreground" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-base font-bold tracking-tight text-foreground">Celphix</span>
-              <span className="text-[10px] font-medium uppercase tracking-widest text-amber-500/80">
+              <span className="text-[10px] font-medium uppercase tracking-widest text-sidebar-foreground/80">
                 Pay-As-You-Go
               </span>
             </div>
@@ -118,8 +118,8 @@ export function PaygSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/payg"}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-amber-500/10 hover:text-amber-600"
-                      activeClassName="bg-amber-500/15 text-amber-600"
+                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
@@ -140,7 +140,7 @@ export function PaygSidebar() {
                     }
                     setNumbersExpanded(!numbersExpanded);
                   }}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-amber-500/10 hover:text-amber-600"
+                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   <Hash className="h-4 w-4 shrink-0" />
                   {!collapsed && (
@@ -168,8 +168,8 @@ export function PaygSidebar() {
                       >
                         <NavLink
                           to={n.url}
-                          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/90 transition-colors hover:bg-amber-500/10 hover:text-amber-600"
-                          activeClassName="bg-amber-500/15 text-amber-600"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary"
                         >
                           <span className="text-[10px] w-4 text-center">•</span>
                           <span>{n.title}</span>
@@ -184,21 +184,21 @@ export function PaygSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-amber-900/20 p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="space-y-3">
           <button
             onClick={() => navigate("/payg/settings")}
             title="Settings"
             className={
               "w-full flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors " +
-              "hover:bg-amber-500/10 hover:text-amber-600 " +
+              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground " +
               (location.pathname === "/payg/settings"
-                ? "bg-amber-500/15 text-amber-600"
+                ? "bg-sidebar-accent text-sidebar-primary"
                 : "")
             }
           >
-            <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-amber-500" />
+            <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-sidebar-foreground" />
             </div>
             {!collapsed && (
               <div className="flex flex-col flex-1 text-left">

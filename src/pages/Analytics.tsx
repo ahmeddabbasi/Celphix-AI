@@ -123,29 +123,29 @@ function EmptyLeaderboard() {
 
 // ── Color palettes ────────────────────────────────────────────────────────────
 const LINE_COLORS = [
-  "#6366f1", // indigo
-  "#10b981", // emerald
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#3b82f6", // blue
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#14b8a6", // teal
-  "#f97316", // orange
-  "#84cc16", // lime
+  "#008631", // primary green
+  "#FFEF00", // accent yellow
+  "#00b844", // lighter green
+  "#b8ac00", // darker yellow
+  "#005c22", // deep green
+  "#d4c900", // golden yellow
+  "#00d455", // bright green
+  "#ffe133", // bright yellow
+  "#004018", // darkest green
+  "#a09800", // olive yellow
 ];
 
 const PIE_COLORS = [
-  "#6366f1",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#84cc16",
+  "#008631",
+  "#FFEF00",
+  "#00b844",
+  "#b8ac00",
+  "#005c22",
+  "#d4c900",
+  "#00d455",
+  "#ffe133",
+  "#004018",
+  "#a09800",
 ];
 
 // ── Date-range picker ─────────────────────────────────────────────────────────
@@ -205,9 +205,9 @@ function DateRangePicker({ dateRange, onChange }: DateRangePickerProps) {
 // ── Rank badge ────────────────────────────────────────────────────────────────
 function RankBadge({ rank }: { rank: number }) {
   const base = "flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold";
-  if (rank === 1) return <div className={cn(base, "bg-yellow-400 text-yellow-900")}>1</div>;
-  if (rank === 2) return <div className={cn(base, "bg-slate-300 text-slate-700")}>2</div>;
-  if (rank === 3) return <div className={cn(base, "bg-orange-400 text-orange-900")}>3</div>;
+  if (rank === 1) return <div className={cn(base, "bg-accent text-accent-foreground")}>1</div>;
+  if (rank === 2) return <div className={cn(base, "bg-primary/30 text-primary-foreground")}>2</div>;
+  if (rank === 3) return <div className={cn(base, "bg-primary/15 text-primary")}>3</div>;
   return <div className={cn(base, "bg-muted text-muted-foreground")}>{rank}</div>;
 }
 
@@ -334,7 +334,7 @@ export default function Analytics() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Top Performer</CardTitle>
-            <Trophy className="h-4 w-4 text-yellow-500" />
+            <Trophy className="h-4 w-4 text-accent-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold truncate">
@@ -495,9 +495,9 @@ export default function Analytics() {
                         <td className="px-4 py-2 text-right">
                           <span className="inline-flex items-center gap-0.5">
                             {row.conversion_rate >= 50 ? (
-                              <ArrowUpRight className="h-3 w-3 text-emerald-500" />
+                              <ArrowUpRight className="h-3 w-3 text-primary" />
                             ) : row.conversion_rate < 25 ? (
-                              <ArrowDownRight className="h-3 w-3 text-red-500" />
+                              <ArrowDownRight className="h-3 w-3 text-destructive" />
                             ) : null}
                             {row.conversion_rate.toFixed(1)}%
                           </span>

@@ -337,14 +337,14 @@ export default function Calls() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
               livePolling
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "border-primary/40 bg-primary/10 text-primary"
                 : "border-border bg-muted text-muted-foreground hover:text-foreground",
             )}
           >
             <span
               className={cn(
                 "h-1.5 w-1.5 rounded-full",
-                livePolling ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground",
+                livePolling ? "bg-primary animate-pulse" : "bg-muted-foreground",
               )}
             />
             Live
@@ -533,8 +533,8 @@ export default function Calls() {
                         className={cn(
                           "text-[11px] font-medium px-2 py-0.5 border",
                           hasEnded
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                            ? "border-primary/30 bg-primary/10 text-primary"
+                            : "border-accent/30 bg-accent/10 text-accent-foreground",
                         )}
                       >
                         {hasEnded ? "Completed" : "Active"}

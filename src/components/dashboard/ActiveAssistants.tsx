@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAssistants } from "@/hooks/use-milestone-queries";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-const COLOR_ACTIVE = "#22c55e";
+const COLOR_ACTIVE = "#008631";
 const COLOR_IDLE = "hsl(var(--muted))";
 
 function CentreLabel({
@@ -65,7 +65,7 @@ function DonutTooltip({
   if (!active || !payload?.length || payload[0].name === "Idle") return null;
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-1.5 text-xs shadow-md">
-      <span className="font-medium text-green-600">{payload[0].value} live</span>
+      <span className="font-medium text-primary">{payload[0].value} live</span>
     </div>
   );
 }
@@ -92,7 +92,7 @@ export function ActiveAssistants() {
           {!isLoading && (
             <Badge
               variant={activeCount > 0 ? "default" : "secondary"}
-              className={activeCount > 0 ? "bg-green-600 text-white" : ""}
+              className={activeCount > 0 ? "bg-primary text-primary-foreground" : ""}
             >
               {activeCount > 0 ? `${activeCount} live` : "None"}
             </Badge>
@@ -140,9 +140,9 @@ export function ActiveAssistants() {
                   <Badge
                     key={i}
                     variant="outline"
-                    className="bg-green-50 dark:bg-green-900/20 border-green-300 text-green-700 dark:text-green-400 gap-1.5 text-xs"
+                    className="bg-primary/10 border-primary/30 text-primary gap-1.5 text-xs"
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                     {name}
                   </Badge>
                 ))}

@@ -15,8 +15,8 @@ export default function PaygDashboard() {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item}>
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15">
-            <LayoutDashboard className="h-5 w-5 text-amber-500" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15">
+            <LayoutDashboard className="h-5 w-5 text-accent-foreground" />
           </div>
           <div>
             <h1 className="text-2xl font-semibold">Dashboard</h1>
@@ -26,10 +26,10 @@ export default function PaygDashboard() {
       </motion.div>
 
       <motion.div variants={item}>
-        <Card className="border-amber-500/20">
+        <Card className="border-accent/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Zap className="h-4 w-4 text-amber-500" />
+              <Zap className="h-4 w-4 text-accent-foreground" />
               Pay-As-You-Go Interface
             </CardTitle>
           </CardHeader>

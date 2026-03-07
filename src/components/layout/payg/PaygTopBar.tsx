@@ -38,16 +38,16 @@ export function PaygTopBar() {
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-amber-900/20 bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 
       {/* Left — sidebar toggle + PAYG badge */}
       <div className="flex items-center gap-4">
         <SidebarTrigger className="-ml-2" />
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-amber-500/15">
-            <Zap className="h-3.5 w-3.5 text-amber-500" />
+          <div className="flex h-6 w-6 items-center justify-center rounded bg-accent/15">
+            <Zap className="h-3.5 w-3.5 text-accent-foreground" />
           </div>
-          <span className="text-sm font-semibold text-amber-600">Pay-As-You-Go</span>
+          <span className="text-sm font-semibold text-accent-foreground">Pay-As-You-Go</span>
         </div>
       </div>
 
@@ -60,7 +60,7 @@ export function PaygTopBar() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary hover:text-primary"
+              className="gap-2 border-accent bg-accent text-accent-foreground hover:bg-accent/85 hover:border-accent/85"
             >
               <Monitor className="h-4 w-4" />
               <span className="font-medium">Command Center</span>
@@ -74,7 +74,7 @@ export function PaygTopBar() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600 hover:text-amber-600"
+              className="gap-2 border-accent/20 bg-accent/5 hover:bg-accent/10 text-accent-foreground hover:text-accent-foreground"
             >
               <Shield className="h-4 w-4" />
               <span className="font-medium">Admin Portal</span>
@@ -89,8 +89,8 @@ export function PaygTopBar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 px-2 text-sm font-normal">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10">
-                <Zap className="h-3.5 w-3.5 text-amber-500" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/10">
+                <Zap className="h-3.5 w-3.5 text-accent-foreground" />
               </div>
               <span className="text-muted-foreground capitalize">
                 {profile?.display_name || profile?.username || "Account"}

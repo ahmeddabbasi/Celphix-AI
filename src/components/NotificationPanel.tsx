@@ -38,16 +38,16 @@ function notifIcon(type: AppNotification["type"]) {
 }
 
 function notifColorClass(type: AppNotification["type"], accent: "primary" | "amber") {
-  if (type === "access_approved") return "bg-green-500/10 text-green-500";
-  if (type === "access_rejected") return "bg-red-500/10   text-red-500";
+  if (type === "access_approved") return "bg-primary/10 text-primary";
+  if (type === "access_rejected") return "bg-destructive/10 text-destructive";
   if (type === "access_request")
     return accent === "amber"
-      ? "bg-amber-500/10 text-amber-500"
+      ? "bg-accent/10 text-accent-foreground"
       : "bg-primary/10   text-primary";
-  if (type === "call")  return "bg-blue-500/10 text-blue-500";
+  if (type === "call")  return "bg-primary/10 text-primary";
   if (type === "milestone")
     return accent === "amber"
-      ? "bg-amber-500/10 text-amber-500"
+      ? "bg-accent/10 text-accent-foreground"
       : "bg-primary/10   text-primary";
   return "bg-muted text-muted-foreground";
 }
@@ -65,7 +65,7 @@ function ActionTakenBadge({ action }: { action: "approve" | "reject" }) {
     return (
       <Badge
         variant="outline"
-        className="mt-2 gap-1 border-green-500/40 text-green-600 text-[10px] font-medium"
+        className="mt-2 gap-1 border-primary/40 text-primary text-[10px] font-medium"
       >
         <CheckCircle className="h-2.5 w-2.5" /> Approved
       </Badge>
@@ -111,7 +111,7 @@ function NotifRow({
         "hover:bg-muted/40 cursor-pointer " +
         (!n.read
           ? accent === "amber"
-            ? "bg-amber-500/[0.03]"
+            ? "bg-accent/[0.03]"
             : "bg-primary/[0.03]"
           : "")
       }
@@ -153,7 +153,7 @@ function NotifRow({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-6 px-2 text-[11px] border-green-500/40 text-green-600 hover:bg-green-500/10"
+                  className="h-6 px-2 text-[11px] border-primary/40 text-primary hover:bg-primary/10"
                   disabled={isReviewing}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -199,7 +199,7 @@ function NotifRow({
       {!n.read && (
         <div
           className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${
-            accent === "amber" ? "bg-amber-500" : "bg-primary"
+            accent === "amber" ? "bg-accent" : "bg-primary"
           }`}
         />
       )}
@@ -233,11 +233,11 @@ export function NotificationPanel({ accent = "primary", isAdmin }: NotificationP
 
   const badgeColor =
     accent === "amber"
-      ? "bg-amber-500 text-white"
+      ? "bg-accent text-accent-foreground"
       : "bg-primary text-primary-foreground";
 
   const headerMarkReadColor =
-    accent === "amber" ? "text-amber-600 hover:underline" : "text-primary hover:underline";
+    accent === "amber" ? "text-primary hover:underline" : "text-primary hover:underline";
 
   const handleApprove = async (reqId: number, notifId: number) => {
     await reviewAccessRequest(reqId, "approve");

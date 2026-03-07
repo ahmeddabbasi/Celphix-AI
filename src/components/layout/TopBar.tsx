@@ -60,7 +60,7 @@ export function TopBar() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600 hover:text-amber-600"
+              className="gap-2 border-accent bg-accent text-accent-foreground hover:bg-accent/85 hover:border-accent/85"
             >
               <Zap className="h-4 w-4" />
               <span className="font-medium">Pay-As-You-Go</span>

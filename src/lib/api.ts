@@ -110,6 +110,24 @@ export const api = {
         "/dashboard/assistants/list",
       ),
 
+    assistantsWithStats: () =>
+      request<{
+        quota: number;
+        assistants: Array<{
+          assistant_id: number;
+          display_name: string;
+          agent_key: string | null;
+          speaker_id: string | null;
+          is_active: boolean;
+          linked_number: string | null;
+          linked_number_label: string | null;
+          total_calls: number;
+          session_calls: number;
+          leads_booked: number;
+          is_in_call: boolean;
+        }>;
+      }>("GET", "/dashboard/assistants/with-stats"),
+
     createAssistant: (payload: { agent_key: string; script_text: string; display_name?: string; is_active?: boolean }) =>
       request<{ assistant: { assistant_id: number; assistant_name: string | null; agent_key: string | null; user_id: number | null; is_active: boolean; created_at: string | null } }>(
         "POST",
@@ -138,6 +156,13 @@ export const api = {
         "PATCH",
         `/dashboard/assistants/${assistantId}/voice`,
         { speaker_id: speakerId },
+      ),
+
+    renameAssistant: (assistantId: string | number, displayName: string) =>
+      request<{ assistant_id: number; display_name: string }>(
+        "PATCH",
+        `/dashboard/assistants/${assistantId}/rename`,
+        { display_name: displayName },
       ),
 
     warmupAssistantVoice: (assistantId: string | number, speakerId: string) =>
@@ -372,5 +397,70 @@ export const api = {
 
     markAllRead: () =>
       request<{ ok: boolean }>("POST", "/api/notifications/mark-all-read"),
+  },
+
+  twilio: {
+    listNumbers: () =>
+      request<{
+        numbers: Array<{
+          id: number;
+          user_id: number;
+          phone_number: string;
+          label: string | null;
+          assistant_id: number | null;
+          assistant_name: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        }>;
+      }>("GET", "/api/twilio/numbers"),
+
+    addNumber: (body: {
+      account_sid: string;
+      auth_token: string;
+      phone_number: string;
+      label?: string | null;
+      assistant_id?: number | null;
+    }) =>
+      request<{
+        number: {
+          id: number;
+          user_id: number;
+          phone_number: string;
+          label: string | null;
+          assistant_id: number | null;
+          assistant_name: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+      }>("POST", "/api/twilio/numbers", body),
+
+    deleteNumber: (numberId: number) =>
+      request<{
+        ok: boolean;
+        unlinked_assistant: { id: number; name: string | null } | null;
+      }>("DELETE", `/api/twilio/numbers/${numberId}`),
+
+    linkAssistant: (numberId: number, assistantId: number | null) =>
+      request<{
+        number: {
+          id: number;
+          user_id: number;
+          phone_number: string;
+          label: string | null;
+          assistant_id: number | null;
+          assistant_name: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+      }>("PATCH", `/api/twilio/numbers/${numberId}/assistant`, { assistant_id: assistantId }),
+
+    startCall: (numberId: number, toNumber: string) =>
+      request<{
+        ok: boolean;
+        call_sid: string;
+        session_id: string;
+        to: string;
+        from: string;
+      }>("POST", `/api/twilio/numbers/${numberId}/call`, { to_number: toNumber }),
   },
 };

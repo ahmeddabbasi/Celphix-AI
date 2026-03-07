@@ -1,6 +1,6 @@
 type CallFlowStatus = "idle" | "warming" | "ready" | "calling" | "ending" | "cleanup";
 
-type WsStatus = "disconnected" | "connecting" | "connected" | "error";
+type WsStatus = "disconnected" | "connecting" | "connected" | "error" | "reconnecting";
 
 type MicStatus = "idle" | "starting" | "streaming" | "error";
 

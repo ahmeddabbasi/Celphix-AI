@@ -58,6 +58,38 @@ export function clearAuth() {
 }
 
 /**
+ * Attempt a silent token refresh using the HttpOnly refresh-token cookie.
+ * Returns true if a new access token was obtained and stored, false otherwise.
+ */
+let _refreshPromise: Promise<boolean> | null = null;
+
+async function trySilentRefresh(): Promise<boolean> {
+  // De-duplicate concurrent 401s — only one refresh flight at a time.
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${getApiUrl()}/auth/refresh`, {
+        method: "POST",
+        credentials: "include", // send the HttpOnly refresh_token cookie
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) return false;
+      const data = await res.json() as { access_token?: string };
+      if (!data.access_token) return false;
+      localStorage.setItem("access_token", data.access_token);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+}
+
+/**
  * Logout user and clear session.
  *
  * Accepts an optional queryClient so the caller can wipe the entire
@@ -72,6 +104,7 @@ export async function logout(queryClient?: { clear(): void }): Promise<void> {
     try {
       await fetch(`${getApiUrl()}/logout`, {
         method: "POST",
+        credentials: "include", // clear refresh token cookie server-side
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -105,24 +138,35 @@ export function getAuthHeaders(): Record<string, string> {
 }
 
 /**
- * Create authenticated fetch wrapper
+ * Create authenticated fetch wrapper.
+ * On 401: attempts one silent refresh via HttpOnly cookie before redirecting.
  */
 export async function authenticatedFetch(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit & { _isRetry?: boolean } = {}
 ): Promise<Response> {
   const headers = {
     ...getAuthHeaders(),
     ...options.headers,
   };
 
+  const { _isRetry, ...fetchOptions } = options;
+
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
   // Handle unauthorized responses
   if (response.status === 401) {
+    // Attempt one silent refresh (prevent infinite loop with _isRetry guard).
+    if (!_isRetry) {
+      const refreshed = await trySilentRefresh();
+      if (refreshed) {
+        // Retry the original request with the new access token.
+        return authenticatedFetch(url, { ...options, _isRetry: true });
+      }
+    }
     clearAuth();
     window.location.href = "/login";
     throw new Error("Unauthorized");
@@ -130,3 +174,39 @@ export async function authenticatedFetch(
 
   return response;
 }
+
+/**
+ * Exchange a Google credential (ID token from @react-oauth/google) for a
+ * platform JWT. On success, stores the token + username in localStorage.
+ *
+ * Returns the username string, or throws on failure.
+ */
+export async function googleSignIn(credential: string): Promise<string> {
+  const response = await fetch(`${getApiUrl()}/auth/google`, {
+    method: "POST",
+    credentials: "include", // receive refresh_token cookie
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail || "Google sign-in failed");
+  }
+
+  const data = await response.json() as { access_token: string; token_type: string };
+  localStorage.setItem("access_token", data.access_token);
+
+  // Decode the JWT payload to extract the username stored in the "sub" claim.
+  // No signature verification needed here — we just decoded a token we just received.
+  try {
+    const payloadB64 = data.access_token.split(".")[1];
+    const payload = JSON.parse(atob(payloadB64));
+    const username: string = payload.sub ?? "";
+    if (username) localStorage.setItem("username", username);
+    return username;
+  } catch {
+    return "";
+  }
+}
+

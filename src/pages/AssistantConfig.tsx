@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronDown, Loader2, Save, Volume2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, Loader2, Save, Volume2, Pencil, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Collapsible,
   CollapsibleContent,
@@ -25,6 +26,8 @@ import { api } from "../lib/api";
 import { getWsUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { callSession } from "@/lib/callSession";
+import { WsSignalHud } from "@/components/WsSignalHud";
+import { useQueryClient } from "@tanstack/react-query";
 
 type AgentDetail = {
   id: string;
@@ -80,6 +83,7 @@ export default function AssistantConfig() {
   const agentId = id ?? "";
 
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -96,6 +100,43 @@ export default function AssistantConfig() {
     name?: string;
     number?: string;
   } | null>(null);
+
+  // Inline name editing
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  function startNameEdit() {
+    setDraftName(agent?.display_name ?? "");
+    setEditingName(true);
+    setTimeout(() => nameInputRef.current?.select(), 0);
+  }
+
+  function cancelNameEdit() {
+    setEditingName(false);
+    setDraftName("");
+  }
+
+  async function commitNameEdit() {
+    const trimmed = draftName.trim();
+    if (!trimmed || trimmed === agent?.display_name) {
+      setEditingName(false);
+      return;
+    }
+    setSavingName(true);
+    try {
+      await api.dashboard.renameAssistant(agentId, trimmed);
+      setAgent((prev) => prev ? { ...prev, display_name: trimmed } : prev);
+      setEditingName(false);
+      queryClient.invalidateQueries({ queryKey: ["assistants", "with-stats"] });
+      toast({ title: "Renamed", description: `Assistant renamed to "${trimmed}"` });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Rename failed", description: e?.message ?? "Failed to rename" });
+    } finally {
+      setSavingName(false);
+    }
+  }
 
   // (Active tab & showDebug were part of an earlier UI iteration; not used in current layout.)
 
@@ -115,7 +156,7 @@ export default function AssistantConfig() {
   // Live partial transcript that updates while the user is speaking.
   // This is transient UI state and is cleared once a final transcript arrives.
   const [partialUserText, setPartialUserText] = useState<string>("");
-  const [wsStatus, setWsStatus] = useState<"disconnected" | "connecting" | "connected" | "error">(
+  const [wsStatus, setWsStatus] = useState<"disconnected" | "connecting" | "connected" | "error" | "reconnecting">(
     "disconnected"
   );
 
@@ -1223,7 +1264,50 @@ export default function AssistantConfig() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">{agent?.display_name ?? agentId}</h1>
+            {/* Editable assistant name */}
+            {editingName ? (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  ref={nameInputRef}
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitNameEdit();
+                    if (e.key === "Escape") cancelNameEdit();
+                  }}
+                  onBlur={commitNameEdit}
+                  className="h-8 py-0 px-2 text-lg font-semibold bg-muted/60 border-primary/40 focus-visible:ring-1 focus-visible:ring-primary w-52"
+                  disabled={savingName}
+                  autoFocus
+                />
+                <button
+                  onMouseDown={(e) => { e.preventDefault(); commitNameEdit(); }}
+                  className="p-1 rounded text-primary hover:bg-primary/10 transition-colors"
+                  disabled={savingName}
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+                <button
+                  onMouseDown={(e) => { e.preventDefault(); cancelNameEdit(); }}
+                  className="p-1 rounded text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group/title">
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">{agent?.display_name ?? agentId}</h1>
+                {agent && (
+                  <button
+                    onClick={startNameEdit}
+                    className="opacity-0 group-hover/title:opacity-100 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                    title="Rename assistant"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
             <p className="text-sm text-muted-foreground font-mono">{agentId}</p>
           </div>
         </div>
@@ -1248,7 +1332,14 @@ export default function AssistantConfig() {
             </Button>
           )}
           <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground ml-2">
-            <span className={wsStatus === "connected" ? "text-green-500" : ""}>{wsStatus}</span>
+            <WsSignalHud status={wsStatus} />
+            <span className={
+              wsStatus === "connected" ? "text-primary" :
+              wsStatus === "reconnecting" || wsStatus === "connecting" ? "text-accent-foreground" :
+              wsStatus === "error" ? "text-destructive" : ""
+            }>
+              {wsStatus}
+            </span>
             <span>·</span>
             <span>{micStatus}</span>
             <span>·</span>
@@ -1256,6 +1347,21 @@ export default function AssistantConfig() {
           </div>
         </div>
       </motion.div>
+
+      {/* Reconnecting banner — shown while WS is reconnecting */}
+      {(wsStatus === "reconnecting" || wsStatus === "connecting") && (
+        <motion.div
+          key="reconnect-banner"
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="mb-3 flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs text-accent-foreground"
+        >
+          <span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
+          {wsStatus === "reconnecting" ? "Re-establishing connection…" : "Connecting…"}
+        </motion.div>
+      )}
 
       {/* Current customer banner (visible during call) */}
       {wsStatus === "connected" && currentCustomer && (

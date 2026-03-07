@@ -112,16 +112,16 @@ export const MonthCalendarGrid = React.memo(function MonthCalendarGrid({
 }: MonthCalendarGridProps) {
   // Memoize color classes (doesn't change)
   const colorClasses = React.useMemo(() => ({
-    blue: 'bg-blue-500',
-    red: 'bg-red-500',
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
-    purple: 'bg-purple-500',
-    pink: 'bg-pink-500',
-    orange: 'bg-orange-500',
-    teal: 'bg-teal-500',
-    indigo: 'bg-indigo-500',
-    gray: 'bg-gray-500'
+    blue:   'bg-primary',
+    red:    'bg-destructive',
+    green:  'bg-primary',
+    yellow: 'bg-accent',
+    purple: 'bg-primary/70',
+    pink:   'bg-primary/50',
+    orange: 'bg-accent/70',
+    teal:   'bg-primary/80',
+    indigo: 'bg-primary/60',
+    gray:   'bg-muted-foreground/50'
   }), [])
 
   // Memoize days calculation (only recalculate when month changes)

@@ -9,110 +9,143 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Voice AI Platform - Dark Mode First Design System */
+/*
+  CELPHIX DESIGN SYSTEM
+  Palette: #008631 (brand green) · #FFEF00 (accent yellow) · #FFFFFF (white)
+
+  Token strategy (dark-mode first):
+    Background     — near-black with green tint
+    Card / Surface — layered dark green-tinted surfaces
+    Primary        — brand green, brightened for dark-bg contrast
+    Accent         — yellow highlight
+    Foreground     — white text
+    Muted          — subdued green-tinted grey for secondary text / bg
+    Destructive    — warm red (semantic only, kept minimal)
+    Border         — subtle green-tinted dark line
+*/
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* ── Core surfaces ────────────────────────────────────────── */
+    --background:          142 20% 4%;      /* #080f09 — near-black, green tint      */
+    --foreground:            0  0% 98%;     /* #fafafa — white text                  */
 
-    --card: 240 10% 5.5%;
-    --card-foreground: 0 0% 98%;
+    --card:                142 18% 7%;      /* #0d1510 — card surface                */
+    --card-foreground:       0  0% 98%;
 
-    --popover: 240 10% 5.5%;
-    --popover-foreground: 0 0% 98%;
+    --popover:             142 18% 7%;
+    --popover-foreground:    0  0% 98%;
 
-    --primary: 187 80% 45%;
-    --primary-foreground: 240 10% 3.9%;
+    /* ── Primary — brand green ────────────────────────────────── */
+    --primary:             142 72% 42%;     /* #1db954-ish bright green              */
+    --primary-foreground:    0  0% 100%;    /* white on green button                 */
 
-    --secondary: 240 5% 12%;
-    --secondary-foreground: 0 0% 98%;
+    /* ── Secondary — mid-dark green tint ─────────────────────── */
+    --secondary:           142 14% 13%;
+    --secondary-foreground:  0  0% 90%;
 
-    --muted: 240 5% 15%;
-    --muted-foreground: 240 5% 55%;
+    /* ── Muted ────────────────────────────────────────────────── */
+    --muted:               142 12% 12%;
+    --muted-foreground:    142  8% 52%;
 
-    --accent: 240 5% 15%;
-    --accent-foreground: 0 0% 98%;
+    /* ── Accent — yellow highlight ────────────────────────────── */
+    --accent:               56 100% 50%;    /* #FFEF00 yellow                        */
+    --accent-foreground:   142 20%  6%;     /* very dark for text on yellow          */
 
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 98%;
+    /* ── Semantic ─────────────────────────────────────────────── */
+    --destructive:           0 65% 50%;
+    --destructive-foreground: 0  0% 98%;
 
-    --success: 142 70% 45%;
-    --success-foreground: 0 0% 98%;
+    --success:             142 72% 42%;     /* same as primary                       */
+    --success-foreground:    0  0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 98%;
+    --warning:              56 100% 50%;    /* yellow                                */
+    --warning-foreground:  142 20%  6%;
 
-    --border: 240 5% 14%;
-    --input: 240 5% 14%;
-    --ring: 187 80% 45%;
+    /* ── Input / ring / border ────────────────────────────────── */
+    --border:              142 18% 14%;
+    --input:               142 18% 14%;
+    --ring:                142 72% 42%;     /* green focus ring                      */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 240 10% 4.5%;
-    --sidebar-foreground: 240 5% 65%;
-    --sidebar-primary: 187 80% 45%;
-    --sidebar-primary-foreground: 240 10% 3.9%;
-    --sidebar-accent: 240 5% 10%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 5% 12%;
-    --sidebar-ring: 187 80% 45%;
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    --sidebar-background:  142 20% 5%;
+    --sidebar-foreground:  142  8% 62%;
+    --sidebar-primary:     142 72% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      142 14% 11%;
+    --sidebar-accent-foreground:  0 0% 95%;
+    --sidebar-border:      142 18% 11%;
+    --sidebar-ring:        142 72% 42%;
 
-    /* Custom tokens for the platform */
-    --surface-1: 240 10% 5%;
-    --surface-2: 240 10% 7%;
-    --surface-3: 240 10% 9%;
-    
-    --text-primary: 0 0% 98%;
-    --text-secondary: 240 5% 65%;
-    --text-tertiary: 240 5% 45%;
-    
-    --accent-cyan: 187 80% 45%;
-    --accent-cyan-muted: 187 60% 25%;
-    --accent-blue: 217 91% 60%;
-    --accent-green: 142 70% 45%;
-    --accent-yellow: 38 92% 50%;
-    --accent-red: 0 72% 51%;
-    --accent-purple: 262 83% 58%;
+    /* ── Custom surface layers ────────────────────────────────── */
+    --surface-1:           142 18%  5%;
+    --surface-2:           142 16%  8%;
+    --surface-3:           142 14% 11%;
+
+    /* ── Text scale ───────────────────────────────────────────── */
+    --text-primary:          0  0% 98%;
+    --text-secondary:      142  8% 62%;
+    --text-tertiary:       142  6% 42%;
+
+    /* ── Accent aliases (for components that reference these) ─── */
+    --accent-green:        142 72% 42%;
+    --accent-green-muted:  142 40% 18%;
+    --accent-yellow:        56 100% 50%;
+    --accent-yellow-muted:  56  80% 22%;
+    --accent-red:            0 65% 50%;
+    /* Keep legacy names so existing components don't break */
+    --accent-cyan:         142 72% 42%;
+    --accent-cyan-muted:   142 40% 18%;
+    --accent-blue:         142 50% 55%;
+    --accent-purple:       142 40% 50%;
   }
 
+  /* ── Light mode (rarely used, but mapped coherently) ───────── */
   .light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background:            0  0% 100%;
+    --foreground:          142 20%  6%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card:                  0  0% 100%;
+    --card-foreground:     142 20%  6%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover:               0  0% 100%;
+    --popover-foreground:  142 20%  6%;
 
-    --primary: 187 80% 40%;
-    --primary-foreground: 0 0% 98%;
+    --primary:             142 100% 26%;    /* #008631 — true brand green on white   */
+    --primary-foreground:    0  0% 100%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 3.9%;
+    --secondary:           142  8% 94%;
+    --secondary-foreground:142 20%  6%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 5% 45%;
+    --muted:               142  8% 94%;
+    --muted-foreground:    142  8% 40%;
 
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 10% 3.9%;
+    --accent:               56 100% 50%;
+    --accent-foreground:   142 20%  6%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive:           0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 90%;
-    --input: 240 5% 90%;
-    --ring: 187 80% 40%;
+    --success:             142 100% 26%;
+    --success-foreground:    0  0% 100%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5% 35%;
-    --sidebar-primary: 187 80% 40%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 10% 3.9%;
-    --sidebar-border: 240 5% 90%;
-    --sidebar-ring: 187 80% 40%;
+    --warning:              56 100% 44%;
+    --warning-foreground:  142 20%  6%;
+
+    --border:              142 18% 88%;
+    --input:               142 18% 88%;
+    --ring:                142 100% 26%;
+
+    --sidebar-background:  142  8% 97%;
+    --sidebar-foreground:  142 10% 30%;
+    --sidebar-primary:     142 100% 26%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      142  8% 92%;
+    --sidebar-accent-foreground:  142 20% 6%;
+    --sidebar-border:      142 18% 88%;
+    --sidebar-ring:        142 100% 26%;
   }
 }
 
@@ -136,6 +169,12 @@
   .font-mono {
     font-family: "JetBrains Mono", ui-monospace, monospace;
   }
+
+  /* Selection highlight */
+  ::selection {
+    background: hsl(142 72% 42% / 0.35);
+    color: hsl(0 0% 100%);
+  }
 }
 
 @layer components {
@@ -143,13 +182,13 @@
   .metric-card {
     @apply relative overflow-hidden;
   }
-  
+
   .metric-card::before {
     content: "";
     @apply absolute -top-1/2 -left-1/2 w-full h-full opacity-0 transition-opacity duration-300;
-    background: radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, hsl(142 72% 42% / 0.08) 0%, transparent 70%);
   }
-  
+
   .metric-card:hover::before {
     @apply opacity-100;
   }
@@ -160,12 +199,8 @@
   }
 
   @keyframes pulse-live {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
   }
 
   /* Status dot animation */
@@ -179,7 +214,7 @@
   }
 
   .status-dot.active::after {
-    @apply bg-green-500/50;
+    background: hsl(142 72% 42% / 0.5);
   }
 
   /* Skeleton loader */
@@ -193,19 +228,15 @@
     background: linear-gradient(
       90deg,
       transparent,
-      hsl(var(--muted-foreground) / 0.05),
+      hsl(142 72% 42% / 0.04),
       transparent
     );
     animation: skeleton-shimmer 1.5s infinite;
   }
 
   @keyframes skeleton-shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   /* Custom scrollbar */
@@ -224,12 +255,12 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted));
+    background: hsl(142 18% 18%);
     border-radius: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(142 72% 42% / 0.6);
   }
 }
 
@@ -237,30 +268,30 @@
   /* Text gradients */
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-blue)));
+    background-image: linear-gradient(135deg, hsl(142 72% 52%), hsl(56 100% 55%));
   }
 
   /* Surface utilities */
-  .surface-1 {
-    background-color: hsl(var(--surface-1));
-  }
-
-  .surface-2 {
-    background-color: hsl(var(--surface-2));
-  }
-
-  .surface-3 {
-    background-color: hsl(var(--surface-3));
-  }
+  .surface-1 { background-color: hsl(var(--surface-1)); }
+  .surface-2 { background-color: hsl(var(--surface-2)); }
+  .surface-3 { background-color: hsl(var(--surface-3)); }
 
   /* Border glow */
   .border-glow {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2), 0 0 20px -5px hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 0 1px hsl(142 72% 42% / 0.25),
+                0 0 20px -5px hsl(142 72% 42% / 0.3);
+  }
+
+  /* Yellow accent glow */
+  .border-glow-yellow {
+    box-shadow: 0 0 0 1px hsl(56 100% 50% / 0.3),
+                0 0 16px -4px hsl(56 100% 50% / 0.25);
   }
 
   /* Subtle shadow */
   .shadow-soft {
-    box-shadow: 0 1px 2px 0 hsl(0 0% 0% / 0.05), 0 1px 3px 0 hsl(0 0% 0% / 0.1);
+    box-shadow: 0 1px 2px 0 hsl(0 0% 0% / 0.15),
+                0 1px 3px 0 hsl(0 0% 0% / 0.2);
   }
 
   /* Focus ring */
@@ -268,3 +299,5 @@
     @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background;
   }
 }
+
+
