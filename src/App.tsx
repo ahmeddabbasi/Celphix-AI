@@ -134,7 +134,7 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID as string ?? ""}>
+  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID as string || "478580933125-1i1v6b5jthc528lb9klgdgoe62mihcf1.apps.googleusercontent.com"}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />

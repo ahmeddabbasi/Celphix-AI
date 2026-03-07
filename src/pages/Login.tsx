@@ -80,7 +80,7 @@ export default function Login() {
     }
   };
 
-  const isGoogleEnabled = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const isGoogleEnabled = true;
   const isBusy = isLoading || isGoogleLoading;
 
   return (
