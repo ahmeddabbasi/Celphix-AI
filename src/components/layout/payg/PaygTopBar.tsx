@@ -38,64 +38,62 @@ export function PaygTopBar() {
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="payg-topbar flex h-14 items-center justify-between px-6">
 
       {/* Left — sidebar toggle + PAYG badge */}
       <div className="flex items-center gap-4">
-        <SidebarTrigger className="-ml-2" />
+  <SidebarTrigger className="-ml-2 text-white hover:text-[#FFEA00] transition-colors" />
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-accent/15">
-            <Zap className="h-3.5 w-3.5 text-accent-foreground" />
-          </div>
-          <span className="text-sm font-semibold text-accent-foreground">Pay-As-You-Go</span>
+          <Zap className="h-4 w-4 text-white" />
+          <span className="text-sm font-bold text-white">Pay-As-You-Go</span>
         </div>
       </div>
 
       {/* Right */}
       <div className="flex items-center gap-2">
 
-        {/* Command Center switcher — visible only when user has CC access */}
+        {/* Command Center switcher */}
         {hasCCAccess && (
           <Link to="/">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="gap-2 border-accent bg-accent text-accent-foreground hover:bg-accent/85 hover:border-accent/85"
+              className="gap-2 font-bold text-white hover:text-[#FFEA00] hover:bg-white/10"
             >
               <Monitor className="h-4 w-4" />
-              <span className="font-medium">Command Center</span>
+              <span>Command Center</span>
             </Button>
           </Link>
         )}
 
         {/* Admin Portal shortcut for admins */}
         {isAdmin && (
-          <Link to="/admin">
+            <Link to="/admin">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="gap-2 border-accent/20 bg-accent/5 hover:bg-accent/10 text-accent-foreground hover:text-accent-foreground"
+                className="gap-2 font-bold text-white hover:text-[#FFEA00] hover:bg-white/10"
             >
               <Shield className="h-4 w-4" />
-              <span className="font-medium">Admin Portal</span>
+              <span>Admin Portal</span>
             </Button>
           </Link>
         )}
 
-        {/* Notifications — amber accent */}
+        {/* Notifications */}
         <NotificationPanel accent="amber" isAdmin={isAdmin} />
 
         {/* Profile dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2 px-2 text-sm font-normal">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/10">
-                <Zap className="h-3.5 w-3.5 text-accent-foreground" />
+            <Button variant="ghost" className="gap-2 px-2 text-sm font-bold text-white hover:text-[#FFEA00] hover:bg-white/10">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+                <Zap className="h-3.5 w-3.5 text-white" />
               </div>
-              <span className="text-muted-foreground capitalize">
+              <span className="capitalize">
                 {profile?.display_name || profile?.username || "Account"}
               </span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">

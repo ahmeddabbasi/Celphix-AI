@@ -330,9 +330,6 @@ export default function SuperAdminPortal() {
             <Shield className="h-8 w-8 text-primary" />
             Super Admin Control Plane
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Multi-tenant management • RBAC • Global observability • <span className="text-accent-green font-semibold">&lt;50ms query time</span>
-          </p>
         </div>
         <div className="flex gap-2">
           <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
@@ -356,7 +353,7 @@ export default function SuperAdminPortal() {
                     id="username"
                     value={newUser.username}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewUser({ ...newUser, username: e.target.value })}
-                    placeholder="john_doe"
+                    placeholder=""
                   />
                 </div>
                 <div>
@@ -366,7 +363,7 @@ export default function SuperAdminPortal() {
                     type="password"
                     value={newUser.password}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewUser({ ...newUser, password: e.target.value })}
-                    placeholder="Secure password"
+                    placeholder=""
                   />
                 </div>
                 <div>
@@ -375,7 +372,7 @@ export default function SuperAdminPortal() {
                     id="display_name"
                     value={newUser.display_name}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewUser({ ...newUser, display_name: e.target.value })}
-                    placeholder="John Doe"
+                    placeholder=""
                   />
                 </div>
                 <div>
@@ -396,7 +393,7 @@ export default function SuperAdminPortal() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewUser({ ...newUser, max_concurrent_sessions: parseInt(e.target.value) || 10 })}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Maximum simultaneous active calls / WebSocket connections
+                    Maximum simultaneous active calls 
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -434,7 +431,7 @@ export default function SuperAdminPortal() {
               <DialogHeader>
                 <DialogTitle>Add Managed API Credential</DialogTitle>
                 <DialogDescription>
-                  Securely add OpenAI or Deepgram keys for a user (AES-256-GCM encrypted)
+                  Securely add OpenAI or Deepgram keys for a user
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -478,7 +475,7 @@ export default function SuperAdminPortal() {
                     type="password"
                     value={newCredential.api_key}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCredential({ ...newCredential, api_key: e.target.value })}
-                    placeholder="sk-..."
+                    placeholder=""
                   />
                 </div>
               </div>
@@ -487,7 +484,7 @@ export default function SuperAdminPortal() {
                   Cancel
                 </Button>
                 <Button onClick={handleAddCredential} disabled={addCredentialMutation.isPending}>
-                  {addCredentialMutation.isPending ? "Adding..." : "Add Credential"}
+                  {addCredentialMutation.isPending ? "Adding" : "Add Credential"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -515,7 +512,7 @@ export default function SuperAdminPortal() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalAssistants}</div>
-            <p className="text-xs text-muted-foreground">AI agents deployed</p>
+            <p className="text-xs text-muted-foreground">Assistants across all tenants</p>
           </CardContent>
         </Card>
 
@@ -537,7 +534,7 @@ export default function SuperAdminPortal() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatDuration(totalCallDuration)}</div>
-            <p className="text-xs text-muted-foreground">All-time duration</p>
+            <p className="text-xs text-muted-foreground">duration</p>
           </CardContent>
         </Card>
       </div>
@@ -569,10 +566,10 @@ export default function SuperAdminPortal() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                God View - All Users
+                All Users
               </CardTitle>
               <CardDescription>
-                Comprehensive user statistics with assistant quotas and activity • Powered by CTE queries & covering indexes
+                Comprehensive user statistics with assistant quotas and activity.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -706,7 +703,7 @@ export default function SuperAdminPortal() {
                 Voice Settings
               </CardTitle>
               <CardDescription>
-                Manage {adminVoices.length} voice profiles • Toggle visibility for all users • Edit name, accent, gender
+                Manage Voices
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -816,7 +813,7 @@ export default function SuperAdminPortal() {
                   Global Key Pool
                 </CardTitle>
                 <CardDescription>
-                  Shared OpenAI &amp; Deepgram API keys used by all sessions • AES-256-GCM encrypted at rest
+                  Shared OpenAI &amp; Deepgram API keys used by all users.
                 </CardDescription>
               </div>
               <Dialog open={addPoolKeyDialogOpen} onOpenChange={setAddPoolKeyDialogOpen}>
@@ -829,9 +826,6 @@ export default function SuperAdminPortal() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Add Global API Key</DialogTitle>
-                    <DialogDescription>
-                      Key is encrypted and immediately available to all active sessions
-                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div>
@@ -860,7 +854,7 @@ export default function SuperAdminPortal() {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setNewPoolKey({ ...newPoolKey, api_key: e.target.value })
                         }
-                        placeholder="sk-..."
+                        placeholder=""
                       />
                     </div>
                     <div>
@@ -871,7 +865,7 @@ export default function SuperAdminPortal() {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setNewPoolKey({ ...newPoolKey, name: e.target.value })
                         }
-                        placeholder="e.g. Production key 1"
+                        placeholder="Production key 1"
                       />
                     </div>
                   </div>
@@ -956,7 +950,7 @@ export default function SuperAdminPortal() {
                 Global Activity Stream
               </CardTitle>
               <CardDescription>
-                Real-time events across all users • Auto-refresh every 15s via SWR • Paginated at DB level
+                Real-time events across all users.
               </CardDescription>
             </CardHeader>
             <CardContent>

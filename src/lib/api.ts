@@ -28,6 +28,21 @@ export function getApiUrl(): string {
 
 export function getWsUrl(): string {
   if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL as string;
+
+  // If an API base URL is configured (e.g. frontend on Vercel, backend elsewhere),
+  // default the WS origin to the same host to avoid accidentally connecting back
+  // to the frontend host.
+  const apiUrl = (import.meta.env.VITE_API_URL as string) || "";
+  if (apiUrl) {
+    try {
+      const u = new URL(apiUrl);
+      const proto = u.protocol === "https:" ? "wss:" : u.protocol === "http:" ? "ws:" : null;
+      if (proto) return `${proto}//${u.host}`;
+    } catch {
+      // ignore invalid URL
+    }
+  }
+
   // In dev the Vite proxy handles /ws → ws://localhost:8000/ws.
   // Derive WS URL from the current page's origin (works for both dev and prod).
   if (typeof window !== "undefined") {
@@ -136,16 +151,16 @@ export const api = {
       ),
 
     getAssistant: (assistantId: string | number) =>
-      request<{ assistant: { assistant_id: number; display_name: string | null; agent_key: string; owner_user_id: number; script_text: string | null; speaker_id: string | null; is_active: boolean; created_at: string | null } }>(
+      request<{ assistant: { assistant_id: number; display_name: string | null; agent_key: string; owner_user_id: number; script_text: string | null; speaker_id: string | null; intro_message: string | null; is_active: boolean; created_at: string | null; bg_noise_enabled?: boolean; bg_noise_volume?: number; bg_noise_url?: string | null } }>(
         "GET",
         `/dashboard/assistants/${assistantId}`,
       ),
 
     updateAssistant: (
       assistantId: string | number,
-      payload: { script_text?: string; display_name?: string; is_active?: boolean; speaker_id?: string | null },
+      payload: { script_text?: string; display_name?: string; is_active?: boolean; speaker_id?: string | null; intro_message?: string | null; bg_noise_enabled?: boolean; bg_noise_volume?: number; bg_noise_url?: string | null },
     ) =>
-      request<{ assistant: { assistant_id: number; display_name: string | null; agent_key: string; owner_user_id: number; script_text: string | null; speaker_id: string | null; is_active: boolean; created_at: string | null } }>(
+      request<{ assistant: { assistant_id: number; display_name: string | null; agent_key: string; owner_user_id: number; script_text: string | null; speaker_id: string | null; intro_message: string | null; is_active: boolean; created_at: string | null; bg_noise_enabled?: boolean; bg_noise_volume?: number; bg_noise_url?: string | null } }>(
         "PUT",
         `/dashboard/assistants/${assistantId}`,
         payload,
@@ -165,11 +180,18 @@ export const api = {
         { display_name: displayName },
       ),
 
-    warmupAssistantVoice: (assistantId: string | number, speakerId: string) =>
+    updateAssistantIntro: (assistantId: string | number, introMessage: string) =>
+      request<{ assistant_id: number; intro_message: string }>(
+        "PATCH",
+        `/dashboard/assistants/${assistantId}/intro`,
+        { intro_message: introMessage },
+      ),
+
+    warmupAssistantVoice: (assistantId: string | number, speakerId: string, introMessage?: string) =>
       request<{ cached: number; speaker_id?: string; detail?: string }>(
         "POST",
         `/dashboard/assistants/${assistantId}/warmup-voice`,
-        { speaker_id: speakerId },
+        { speaker_id: speakerId, ...(introMessage ? { intro_message: introMessage } : {}) },
       ),
 
     users: (window: "day" | "week" | "month") =>

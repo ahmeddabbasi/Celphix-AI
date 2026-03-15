@@ -393,9 +393,6 @@ export default function NumbersTwilio() {
       <motion.div variants={item} className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Numbers · Twilio</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your Twilio phone numbers and link them to assistants for outbound calling.
-          </p>
         </div>
         <AddNumberDialog
           assistants={assistants}
@@ -412,7 +409,6 @@ export default function NumbersTwilio() {
               Your Twilio Numbers
             </CardTitle>
             <CardDescription>
-              Each number is associated with your account only. Credentials are encrypted at rest.
               Each assistant can only be linked to one number at a time.
             </CardDescription>
           </CardHeader>

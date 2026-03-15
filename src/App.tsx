@@ -19,8 +19,6 @@ import Calls from "./pages/Calls";
 import Crm from "./pages/Crm";
 import Analytics from "./pages/Analytics";
 import Calendar from "./pages/Calendar";
-import NumbersCustomSip from "./pages/numbers/NumbersCustomSip";
-import NumbersTelnyx from "./pages/numbers/NumbersTelnyx";
 import NumbersTwilio from "./pages/numbers/NumbersTwilio";
 import SuperAdminPortal from "./pages/SuperAdminPortalOptimized";
 import Login from "./pages/Login";
@@ -36,8 +34,6 @@ import PaygCrm from "./pages/payg/PaygCrm";
 import PaygAnalytics from "./pages/payg/PaygAnalytics";
 import PaygCalendar from "./pages/payg/PaygCalendar";
 import PaygVoices from "./pages/payg/PaygVoices";
-import PaygNumbersCustomSip from "./pages/payg/numbers/PaygNumbersCustomSip";
-import PaygNumbersTelnyx from "./pages/payg/numbers/PaygNumbersTelnyx";
 import PaygNumbersTwilio from "./pages/payg/numbers/PaygNumbersTwilio";
 import PaygSettings from "./pages/payg/PaygSettings";
 
@@ -97,9 +93,7 @@ const AppContent = () => {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/admin" element={<SuperAdminPortal />} />
-        <Route path="/numbers" element={<Navigate to="/numbers/custom-sip" replace />} />
-        <Route path="/numbers/custom-sip" element={<NumbersCustomSip />} />
-        <Route path="/numbers/telnyx" element={<NumbersTelnyx />} />
+        <Route path="/numbers" element={<Navigate to="/numbers/twilio" replace />} />
         <Route path="/numbers/twilio" element={<NumbersTwilio />} />
         <Route path="/voices" element={<Voices />} />
         <Route path="/settings" element={<Settings />} />
@@ -121,9 +115,7 @@ const AppContent = () => {
         <Route path="analytics" element={<PaygAnalytics />} />
         <Route path="calendar" element={<PaygCalendar />} />
         <Route path="voices" element={<PaygVoices />} />
-        <Route path="numbers" element={<Navigate to="/payg/numbers/custom-sip" replace />} />
-        <Route path="numbers/custom-sip" element={<PaygNumbersCustomSip />} />
-        <Route path="numbers/telnyx" element={<PaygNumbersTelnyx />} />
+        <Route path="numbers" element={<Navigate to="/payg/numbers/twilio" replace />} />
         <Route path="numbers/twilio" element={<PaygNumbersTwilio />} />
         <Route path="settings" element={<PaygSettings />} />
       </Route>

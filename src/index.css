@@ -11,7 +11,7 @@
 
 /*
   CELPHIX DESIGN SYSTEM
-  Palette: #008631 (brand green) · #FFEF00 (accent yellow) · #FFFFFF (white)
+  Palette: #008613 (brand green) · #FFEA00 (accent yellow) · #FFFFFF (white)
 
   Token strategy (dark-mode first):
     Background     — near-black with green tint
@@ -49,7 +49,7 @@
     --muted-foreground:    142  8% 52%;
 
     /* ── Accent — yellow highlight ────────────────────────────── */
-    --accent:               56 100% 50%;    /* #FFEF00 yellow                        */
+  --accent:               56 100% 50%;    /* #FFEA00 yellow                        */
     --accent-foreground:   142 20%  6%;     /* very dark for text on yellow          */
 
     /* ── Semantic ─────────────────────────────────────────────── */
@@ -113,7 +113,7 @@
     --popover:               0  0% 100%;
     --popover-foreground:  142 20%  6%;
 
-    --primary:             142 100% 26%;    /* #008631 — true brand green on white   */
+  --primary:             142 100% 26%;    /* #008613 — true brand green on white   */
     --primary-foreground:    0  0% 100%;
 
     --secondary:           142  8% 94%;
@@ -262,6 +262,130 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(142 72% 42% / 0.6);
   }
+}
+
+/*
+  ── PAYG SHELL SCOPE ────────────────────────────────────────────────────
+  Applied to the root div of PaygLayout via the `.payg-shell` class.
+  Overrides sidebar + topbar tokens to pure #008613 green with white text
+  and #FFEA00 yellow hover. Content area uses white background, black text.
+*/
+.payg-shell {
+  /* Sidebar: solid brand green */
+  --sidebar-background:          142 100% 26%;   /* #008613                  */
+  --sidebar-foreground:            0   0% 100%;  /* white text               */
+  --sidebar-border:              142  80% 20%;   /* slightly darker green    */
+  --sidebar-accent:              142  80% 20%;   /* hover bg on nav items    */
+  --sidebar-accent-foreground:    55 100% 50%;   /* #FFEA00 yellow hover     */
+  --sidebar-primary:              55 100% 50%;   /* active indicator yellow  */
+  --sidebar-primary-foreground:  142 100% 26%;   /* green text on yellow     */
+  --sidebar-ring:                 55 100% 50%;
+
+  /* Override primary so buttons in the content area use green + yellow */
+  --primary:                     142 100% 26%;   /* #008613                  */
+  --primary-foreground:           55 100% 50%;   /* #FFEA00 text on buttons  */
+}
+
+/* TopBar green override */
+.payg-topbar {
+  background-color: #008613;
+  border-bottom-color: #006626;
+}
+
+/* Content area: white bg, black text — override all dark-theme surface colors */
+.payg-content {
+  background-color: #ffffff;
+  color: #000000;
+
+  /* Override dark-theme CSS vars so cards/inputs/borders go light */
+  --background:     0 0% 100%;
+  --foreground:     0 0% 4%;
+  --card:           0 0% 98%;
+  --card-foreground: 0 0% 4%;
+  --popover:        0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --muted:          0 0% 94%;
+  --muted-foreground: 0 0% 35%;
+  --border:         0 0% 88%;
+  --input:          0 0% 88%;
+  --ring:           0 0% 4%;
+}
+
+/* All default (primary) buttons inside payg-content: green bg + yellow text */
+.payg-content .btn-primary,
+.payg-content button[class*="bg-primary"],
+.payg-content [data-slot="button"]:not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="secondary"]) {
+  background-color: #008613 !important;
+  color: #FFEA00 !important;
+  font-weight: 700;
+  border-color: #008613 !important;
+}
+
+.payg-content [data-slot="button"]:not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="secondary"]):hover {
+  background-color: #006626 !important;
+  color: #FFEA00 !important;
+}
+
+/*
+  ── COMMAND CENTER SHELL SCOPE ──────────────────────────────────────────
+  Applied to the root div of AppLayout via the `.cc-shell` class.
+  Overrides sidebar + topbar tokens to #0a2a0a dark green with white text
+  and #ffea00 yellow hover. Content area uses white background, black text.
+*/
+.cc-shell {
+  /* Sidebar: solid dark green */
+  --sidebar-background:            0  0%   4%;   /* near #0a2a0a via override  */
+  --sidebar-foreground:            0  0% 100%;   /* white text                 */
+  --sidebar-border:                0  0%   8%;   /* slightly lighter dark      */
+  --sidebar-accent:                0  0%  12%;   /* hover bg on nav items      */
+  --sidebar-accent-foreground:    55 100%  50%;  /* #ffea00 yellow hover       */
+  --sidebar-primary:               0  0%  20%;   /* active bg                  */
+  --sidebar-primary-foreground:   55 100%  50%;  /* #ffea00 on active          */
+  --sidebar-ring:                 55 100%  50%;
+
+  /* Override primary so buttons use dark green + yellow */
+  --primary:                       0  0%   4%;   /* #0a2a0a                    */
+  --primary-foreground:           55 100%  50%;  /* #ffea00 text on buttons    */
+}
+
+/* TopBar dark green override */
+.cc-topbar {
+  background-color: #0a2a0a !important;
+  border-bottom-color: #051505 !important;
+}
+
+/* Content area: white bg, black text — override all dark-theme surface colors */
+.cc-content {
+  background-color: #ffffff;
+  color: #000000;
+
+  /* Override dark-theme CSS vars so cards/inputs/borders go light */
+  --background:     0 0% 100%;      /* white */
+  --foreground:     0 0% 4%;        /* near-black text */
+  --card:           0 0% 98%;       /* off-white cards */
+  --card-foreground: 0 0% 4%;
+  --popover:        0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --muted:          0 0% 94%;
+  --muted-foreground: 0 0% 35%;
+  --border:         0 0% 88%;
+  --input:          0 0% 88%;
+  --ring:           0 0% 4%;
+}
+
+/* All default (primary) buttons inside cc-content: dark green bg + yellow text */
+.cc-content .btn-primary,
+.cc-content button[class*="bg-primary"],
+.cc-content [data-slot="button"]:not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="secondary"]) {
+  background-color: #0a2a0a !important;
+  color: #ffea00 !important;
+  font-weight: 700;
+  border-color: #0a2a0a !important;
+}
+
+.cc-content [data-slot="button"]:not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="secondary"]):hover {
+  background-color: #051505 !important;
+  color: #ffea00 !important;
 }
 
 @layer utilities {

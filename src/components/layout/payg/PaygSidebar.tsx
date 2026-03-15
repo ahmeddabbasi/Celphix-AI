@@ -50,9 +50,7 @@ const navItems = [
 ];
 
 const numbersItems = [
-  { title: "Custom SIP", url: "/payg/numbers/custom-sip" },
-  { title: "Telnyx",     url: "/payg/numbers/telnyx"     },
-  { title: "Twilio",     url: "/payg/numbers/twilio"     },
+  { title: "Twilio", url: "/payg/numbers/twilio" },
 ];
 
 export function PaygSidebar() {
@@ -86,17 +84,17 @@ export function PaygSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
+    <Sidebar collapsible="icon" className="border-r-0" style={{ backgroundColor: '#008613' }}>
       {/* Brand header */}
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+  <SidebarHeader className="border-b border-white/20 px-4 py-4" style={{ backgroundColor: '#008613' }}>
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15">
-            <Zap className="h-4 w-4 text-accent-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20">
+            <Zap className="h-4 w-4 text-white" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-foreground">Celphix</span>
-              <span className="text-[10px] font-medium uppercase tracking-widest text-sidebar-foreground/80">
+              <span className="text-base font-bold tracking-tight text-white">Celphix</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
                 Pay-As-You-Go
               </span>
             </div>
@@ -104,7 +102,7 @@ export function PaygSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
+  <SidebarContent className="px-2 py-4" style={{ backgroundColor: '#008613' }}>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -118,8 +116,8 @@ export function PaygSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/payg"}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary"
+                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10 hover:text-[#FFEA00]"
+                      activeClassName="bg-white/20 text-[#FFEA00]"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
@@ -135,12 +133,12 @@ export function PaygSidebar() {
                   tooltip="Numbers"
                   onClick={() => {
                     if (collapsed) {
-                      navigate("/payg/numbers/custom-sip");
+                      navigate("/payg/numbers/twilio");
                       return;
                     }
                     setNumbersExpanded(!numbersExpanded);
                   }}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10 hover:text-[#FFEA00]"
                 >
                   <Hash className="h-4 w-4 shrink-0" />
                   {!collapsed && (
@@ -168,8 +166,8 @@ export function PaygSidebar() {
                       >
                         <NavLink
                           to={n.url}
-                          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white/90 transition-colors hover:bg-white/10 hover:text-[#FFEA00]"
+                          activeClassName="bg-white/20 text-[#FFEA00]"
                         >
                           <span className="text-[10px] w-4 text-center">•</span>
                           <span>{n.title}</span>
@@ -184,28 +182,25 @@ export function PaygSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+  <SidebarFooter className="border-t border-white/20 p-4" style={{ backgroundColor: '#008613' }}>
         <div className="space-y-3">
           <button
             onClick={() => navigate("/payg/settings")}
             title="Settings"
-            className={
-              "w-full flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors " +
-              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground " +
-              (location.pathname === "/payg/settings"
-                ? "bg-sidebar-accent text-sidebar-primary"
-                : "")
+              className={
+              "w-full flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors font-bold text-white hover:bg-white/10 hover:text-[#FFEA00] " +
+              (location.pathname === "/payg/settings" ? "bg-white/20 text-[#FFEA00]" : "")
             }
           >
-            <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-sidebar-foreground" />
+            <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-white" />
             </div>
             {!collapsed && (
               <div className="flex flex-col flex-1 text-left">
-                <span className="text-sm font-medium text-foreground capitalize">
+                <span className="text-sm font-bold capitalize">
                   {username || "User"}
                 </span>
-                <span className="text-xs text-muted-foreground">Settings</span>
+                <span className="text-xs text-white/70">Settings</span>
               </div>
             )}
           </button>
@@ -214,7 +209,7 @@ export function PaygSidebar() {
             variant="ghost"
             size={collapsed ? "icon" : "sm"}
             onClick={handleLogout}
-            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            className="w-full justify-start font-bold text-white hover:text-[#FFEA00] hover:bg-white/10"
             title="Logout"
           >
             <LogOut className="h-4 w-4 shrink-0" />

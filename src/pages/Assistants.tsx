@@ -386,12 +386,12 @@ export default function Assistants() {
                 <>
                   <PhoneOff className="h-8 w-8 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground">No assistants available</p>
-                  <p className="text-xs text-muted-foreground/60">Your admin hasn't assigned a quota yet</p>
+                  <p className="text-xs text-muted-foreground/60">No Quota assigned by the admin</p>
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-8 w-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">Provisioning assistants…</p>
+                  <p className="text-sm text-muted-foreground">Provisioning assistants</p>
                 </>
               )}
             </div>

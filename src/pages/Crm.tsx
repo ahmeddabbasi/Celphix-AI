@@ -575,7 +575,7 @@ export default function Crm() {
             <p className="text-sm font-medium">CSV upload</p>
             {importStep === "idle" ? (
               <p className="text-xs text-muted-foreground">
-                Upload a CSV. Next you’ll map your columns (Phone Number is required).
+                Upload a CSV and map columns (Phone Number is required).
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">

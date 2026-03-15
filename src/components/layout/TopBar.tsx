@@ -37,16 +37,16 @@ export function TopBar() {
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="cc-topbar flex h-14 items-center justify-between border-b px-6">
 
       {/* Left — sidebar toggle + search */}
       <div className="flex items-center gap-4">
-        <SidebarTrigger className="-ml-2" />
+        <SidebarTrigger className="-ml-2 text-white hover:text-[#ffea00] transition-colors" />
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
           <Input
             placeholder="Search..."
-            className="w-64 bg-muted/50 border-0 pl-9 text-sm placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/50"
+            className="w-64 bg-white/10 border-white/20 pl-9 text-sm text-white placeholder:text-white/50 focus-visible:ring-1 focus-visible:ring-[#ffea00]/50"
           />
         </div>
       </div>
@@ -60,10 +60,10 @@ export function TopBar() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 border-accent bg-accent text-accent-foreground hover:bg-accent/85 hover:border-accent/85"
+              className="gap-2 border-[#ffea00] bg-[#ffea00] text-[#0a2a0a] font-bold hover:bg-[#ffea00]/85 hover:border-[#ffea00]/85"
             >
               <Zap className="h-4 w-4" />
-              <span className="font-medium">Pay-As-You-Go</span>
+              <span className="font-bold">Pay-As-You-Go</span>
             </Button>
           </Link>
         )}
@@ -72,30 +72,30 @@ export function TopBar() {
         {isAdmin && (
           <Link to="/admin">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary hover:text-primary"
+              className="gap-2 font-bold text-white hover:text-[#ffea00] hover:bg-white/10"
             >
               <Shield className="h-4 w-4" />
-              <span className="font-medium">Admin Portal</span>
+              <span className="font-bold">Admin Portal</span>
             </Button>
           </Link>
         )}
 
-        {/* Notifications — delegates to shared NotificationPanel */}
+        {/* Notifications */}
         <NotificationPanel accent="primary" isAdmin={isAdmin} />
 
         {/* Profile dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2 px-2 text-sm font-normal">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                <User className="h-3.5 w-3.5 text-primary" />
+            <Button variant="ghost" className="gap-2 px-2 text-sm font-bold text-white hover:text-[#ffea00] hover:bg-white/10">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+                <User className="h-3.5 w-3.5 text-white" />
               </div>
-              <span className="text-muted-foreground capitalize">
+              <span className="capitalize">
                 {profile?.display_name || profile?.username || "Account"}
               </span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <ChevronDown className="h-3 w-3 text-white/70" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">

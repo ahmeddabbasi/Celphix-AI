@@ -12,11 +12,11 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 export function PaygLayout() {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="payg-shell flex min-h-screen w-full bg-background">
         <PaygSidebar />
         <SidebarInset className="flex flex-col flex-1">
           <PaygTopBar />
-          <main className="flex-1 overflow-auto p-6 scrollbar-thin">
+          <main className="payg-content flex-1 overflow-auto p-6 scrollbar-thin">
             <Outlet />
           </main>
         </SidebarInset>

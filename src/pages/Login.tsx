@@ -127,8 +127,8 @@ export default function Login() {
           {/* feature pills */}
           <div className="mt-10 flex flex-col gap-3 w-full">
             {[
-              { label: "Real-time voice conversations" },
-              { label: "AI-powered lead qualification" },
+              { label: "Real time voice conversations" },
+              { label: "AI powered lead qualification" },
               { label: "Seamless CRM integration" },
             ].map((f) => (
               <div
@@ -179,7 +179,7 @@ export default function Login() {
               Welcome back
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Sign in to your account to continue
+              Sign in via Google
             </p>
           </div>
 
@@ -190,7 +190,7 @@ export default function Login() {
                 {isGoogleLoading ? (
                   <div className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Signing in with Google…
+                    Signing in with Google
                   </div>
                 ) : (
                   <GoogleLogin
@@ -291,7 +291,7 @@ export default function Login() {
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Signing in…
+                  Signing in
                 </>
               ) : (
                 "Sign in"

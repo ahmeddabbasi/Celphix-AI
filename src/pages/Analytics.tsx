@@ -123,29 +123,29 @@ function EmptyLeaderboard() {
 
 // ── Color palettes ────────────────────────────────────────────────────────────
 const LINE_COLORS = [
-  "#008631", // primary green
-  "#FFEF00", // accent yellow
-  "#00b844", // lighter green
-  "#b8ac00", // darker yellow
-  "#005c22", // deep green
-  "#d4c900", // golden yellow
-  "#00d455", // bright green
-  "#ffe133", // bright yellow
-  "#004018", // darkest green
-  "#a09800", // olive yellow
+  "#008613", // primary green
+  "#FFEA00", // accent yellow
+  "#008613",
+  "#FFEA00",
+  "#008613",
+  "#FFEA00",
+  "#008613",
+  "#FFEA00",
+  "#008613",
+  "#FFEA00",
 ];
 
 const PIE_COLORS = [
-  "#008631",
-  "#FFEF00",
-  "#00b844",
-  "#b8ac00",
-  "#005c22",
-  "#d4c900",
-  "#00d455",
-  "#ffe133",
-  "#004018",
-  "#a09800",
+  "#008613",
+  "#FFEA00",
+  "#008613",
+  "#FFEA00",
+  "#008613",
+  "#FFEA00",
+  "#008613",
+  "#FFEA00",
+  "#008613",
+  "#FFEA00",
 ];
 
 // ── Date-range picker ─────────────────────────────────────────────────────────

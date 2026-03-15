@@ -42,8 +42,6 @@ const navItems = [
 ];
 
 const numbersItems = [
-  { title: "Custom SIP", url: "/numbers/custom-sip" },
-  { title: "Telnyx", url: "/numbers/telnyx" },
   { title: "Twilio", url: "/numbers/twilio" },
 ];
 
@@ -75,21 +73,21 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+    <Sidebar collapsible="icon" className="border-r-0" style={{ backgroundColor: '#0a2a0a' }}>
+      <SidebarHeader className="border-b border-white/20 px-4 py-4" style={{ backgroundColor: '#0a2a0a' }}>
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <Activity className="h-4 w-4 text-primary" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20">
+            <Activity className="h-4 w-4 text-white" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-foreground">Celphix</span>
+              <span className="text-base font-bold tracking-tight text-white">Celphix</span>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-2 py-4" style={{ backgroundColor: '#0a2a0a' }}>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -103,8 +101,8 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-primary"
+                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10 hover:text-[#ffea00]"
+                      activeClassName="bg-white/20 text-[#ffea00]"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
@@ -120,12 +118,12 @@ export function AppSidebar() {
                   tooltip="Numbers"
                   onClick={() => {
                     if (collapsed) {
-                      navigate("/numbers/custom-sip");
+                      navigate("/numbers/twilio");
                       return;
                     }
                     setNumbersExpanded(!numbersExpanded);
                   }}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10 hover:text-[#ffea00]"
                 >
                   <Hash className="h-4 w-4 shrink-0" />
                   {!collapsed && (
@@ -148,8 +146,8 @@ export function AppSidebar() {
                       <SidebarMenuButton asChild isActive={location.pathname === n.url} tooltip={n.title}>
                         <NavLink
                           to={n.url}
-                          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                          activeClassName="bg-sidebar-accent text-primary"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white/90 transition-colors hover:bg-white/10 hover:text-[#ffea00]"
+                          activeClassName="bg-white/20 text-[#ffea00]"
                         >
                           <span className="text-[10px] w-4 text-center">•</span>
                           <span>{n.title}</span>
@@ -164,27 +162,26 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-white/20 p-4" style={{ backgroundColor: '#0a2a0a' }}>
         <div className="space-y-3">
           {/* Profile — clicking opens /settings */}
           <button
             onClick={() => navigate("/settings")}
             title="Settings"
             className={
-              "w-full flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors " +
-              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground " +
-              (location.pathname === "/settings" ? "bg-sidebar-accent text-primary" : "")
+              "w-full flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors font-bold text-white hover:bg-white/10 hover:text-[#ffea00] " +
+              (location.pathname === "/settings" ? "bg-white/20 text-[#ffea00]" : "")
             }
           >
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-primary" />
+            <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-white" />
             </div>
             {!collapsed && (
               <div className="flex flex-col flex-1 text-left">
-                <span className="text-sm font-medium text-foreground capitalize">
+                <span className="text-sm font-bold text-white capitalize">
                   {username || "User"}
                 </span>
-                <span className="text-xs text-muted-foreground">Settings</span>
+                <span className="text-xs text-white/60">Settings</span>
               </div>
             )}
           </button>
@@ -193,7 +190,7 @@ export function AppSidebar() {
             variant="ghost"
             size={collapsed ? "icon" : "sm"}
             onClick={handleLogout}
-            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            className="w-full justify-start font-bold text-white hover:text-[#ffea00] hover:bg-white/10"
             title="Logout"
           >
             <LogOut className="h-4 w-4 shrink-0" />

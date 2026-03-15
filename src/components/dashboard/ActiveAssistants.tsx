@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAssistants } from "@/hooks/use-milestone-queries";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-const COLOR_ACTIVE = "#008631";
+const COLOR_ACTIVE = "#008613";
 const COLOR_IDLE = "hsl(var(--muted))";
 
 function CentreLabel({

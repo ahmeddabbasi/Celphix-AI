@@ -114,8 +114,8 @@ export default function Voices() {
           </div>
           <p className="text-sm text-muted-foreground">
             {voices.length} voice profiles across{" "}
-            {ACCENT_OPTIONS.length} accents · Click <strong>Play Sample</strong> to
-            preview · Powered by Coqui VCTK VITS
+            various accents. Click <strong>Play Sample</strong> to
+            preview.
           </p>
         </div>
 
@@ -235,7 +235,7 @@ export default function Voices() {
           className="flex flex-col items-center justify-center py-24 text-center gap-3"
         >
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-medium text-muted-foreground">Loading voices…</p>
+          <p className="text-sm font-medium text-muted-foreground">Loading voices</p>
         </motion.div>
       ) : (
         <>

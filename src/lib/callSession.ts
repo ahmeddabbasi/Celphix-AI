@@ -191,12 +191,17 @@ class CallSessionSingleton {
 
     ws.onerror = () => {
       this.setWsStatus("error");
-      this.pushEvent("ws_error", {});
+      this.pushEvent("ws_error", { url: ws.url, readyState: ws.readyState });
     };
 
-    ws.onclose = () => {
+    ws.onclose = (ev) => {
       this.setWsStatus("disconnected");
-      this.pushEvent("ws_close", {});
+      this.pushEvent("ws_close", {
+        url: ws.url,
+        code: ev.code,
+        reason: ev.reason,
+        wasClean: ev.wasClean,
+      });
       // If the WS closes for any reason, mic should stop.
       // (AssistantConfig is the only place that wires micStopFn.)
       this.micStopFn?.().catch(() => {

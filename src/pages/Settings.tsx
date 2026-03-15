@@ -120,7 +120,7 @@ export default function Settings() {
         <motion.div variants={item}>
           <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your account and preferences.
+            Manage account and preferences.
           </p>
         </motion.div>
 
@@ -166,7 +166,7 @@ export default function Settings() {
                   disabled={profileLoading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Shown across the platform. Username ({username || "…"}) cannot be changed.
+                  Username ({username || "…"}) cannot be changed.
                 </p>
               </div>
 
@@ -188,9 +188,8 @@ export default function Settings() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">Password</CardTitle>
+                <CardTitle className="text-base">Reset Password</CardTitle>
               </div>
-              <CardDescription>Change your account password.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronDown, Loader2, Save, Volume2, Pencil, Check, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, ChevronDown, Loader2, Save, Volume2, Pencil, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,6 +35,7 @@ type AgentDetail = {
   display_name?: string;
   script_text?: string;
   speaker_id?: string | null;
+  intro_message?: string | null;
 };
 
 type WsEvent = {
@@ -61,6 +63,11 @@ type ChatTurn = {
   text: string;
 };
 
+type BgNoiseManifest = {
+  version?: number;
+  sounds: Array<{ id: string; label: string; file: string }>;
+};
+
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -85,6 +92,9 @@ export default function AssistantConfig() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const bgNoiseAssistantHydratedRef = useRef(false);
+  const bgNoiseAssistantSaveTimerRef = useRef<number | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [callStarting, setCallStarting] = useState(false);
@@ -95,6 +105,8 @@ export default function AssistantConfig() {
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [savingVoice, setSavingVoice] = useState(false);
   const [warmingUpVoice, setWarmingUpVoice] = useState(false);
+  const [introMessage, setIntroMessage] = useState("");
+  const [savingIntro, setSavingIntro] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<{
     index?: number | string;
     name?: string;
@@ -244,6 +256,51 @@ export default function AssistantConfig() {
   const playbackChainRef = useRef<{ nextTime: number } | null>(null);
   const playbackNodesRef = useRef<AudioBufferSourceNode[]>([]);
 
+  // Background noise (playback-only; NEVER touches STT input)
+  const [bgNoiseEnabled, setBgNoiseEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("assistant_bg_noise_enabled") === "true";
+    } catch {
+      return false;
+    }
+  });
+  // User-facing 0..100 scale. Default volume = 10.
+  const [bgNoiseVolume, setBgNoiseVolume] = useState<number>(() => {
+    try {
+      const v = Number(localStorage.getItem("assistant_bg_noise_volume") ?? "10");
+      return Number.isFinite(v) ? Math.min(100, Math.max(0, Math.round(v))) : 10;
+    } catch {
+      return 10;
+    }
+  });
+
+  // Selected background sound URL (served from /public).
+  const [bgNoiseUrl, setBgNoiseUrl] = useState<string>(() => {
+    try {
+      return localStorage.getItem("assistant_bg_noise_url") ?? "";
+    } catch {
+      return "";
+    }
+  });
+
+  const [bgNoiseOptions, setBgNoiseOptions] = useState<Array<{ id: string; label: string; url: string }>>([]);
+  const [bgNoiseManifestError, setBgNoiseManifestError] = useState<string | null>(null);
+
+  // Note: background-noise settings are stored per-assistant in Postgres.
+
+  // Preview audio (UI-level preview, not part of the call playback chain)
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+
+  // Once a call is active, noise settings must be frozen.
+  const [bgNoiseLocked, setBgNoiseLocked] = useState(false);
+  const bgNoiseLockedConfigRef = useRef<{ enabled: boolean; volume: number; url: string } | null>(null);
+
+  const bgNoiseGainRef = useRef<GainNode | null>(null);
+  const bgNoiseSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const bgNoiseBufferRef = useRef<AudioBuffer | null>(null);
+  const bgNoiseBufferKeyRef = useRef<string | null>(null);
+
   // ── Voice data (public/visible voices from API) ──────────────────────
   const { data: voices } = usePublicVoices();
 
@@ -256,6 +313,11 @@ export default function AssistantConfig() {
     if (!agent) return false;
     return (selectedVoice ?? null) !== (agent.speaker_id ?? null);
   }, [agent, selectedVoice]);
+
+  const isIntroDirty = useMemo(() => {
+    if (!agent) return false;
+    return (introMessage ?? "") !== (agent.intro_message ?? "");
+  }, [agent, introMessage]);
 
   // Debug events can be extremely chatty. On this page we expose an operator toggle
   // and show *all* debug_event frames when enabled.
@@ -428,7 +490,181 @@ export default function AssistantConfig() {
     playbackChainRef.current = { nextTime: ctx.currentTime };
     setSpeakerStatus("primed");
     pushEvent("speaker_ready", { sampleRate: ctx.sampleRate });
+
+    // If background noise is enabled, initialize the noise chain for this context.
+    // This is playback-only and mixes into ctx.destination.
+    if (getEffectiveBgNoiseConfig().enabled) {
+      try {
+        await ensureBgNoiseRunning(ctx);
+      } catch {
+        // best-effort; never block playback
+      }
+    }
     return ctx;
+  }
+
+  function persistBgNoiseSettings(assistantId: string, nextEnabled: boolean, nextVolume: number, nextUrl: string) {
+    try {
+      localStorage.setItem(`assistant_bg_noise_enabled_${assistantId}`, String(nextEnabled));
+      localStorage.setItem(`assistant_bg_noise_volume_${assistantId}`, String(nextVolume));
+      localStorage.setItem(`assistant_bg_noise_url_${assistantId}`, String(nextUrl));
+    } catch {
+      // ignore
+    }
+  }
+
+  function loadBgNoiseLocalFallback(assistantId: string) {
+    try {
+      const enabledRaw = localStorage.getItem(`assistant_bg_noise_enabled_${assistantId}`);
+      const volumeRaw = localStorage.getItem(`assistant_bg_noise_volume_${assistantId}`);
+      const urlRaw = localStorage.getItem(`assistant_bg_noise_url_${assistantId}`);
+
+      const enabled = enabledRaw === null ? undefined : enabledRaw === "true";
+      const volume = volumeRaw === null ? undefined : Number(volumeRaw);
+      const url = urlRaw === null ? undefined : urlRaw;
+
+      return {
+        enabled,
+        volume: Number.isFinite(volume) ? volume : undefined,
+        url,
+      };
+    } catch {
+      return { enabled: undefined, volume: undefined, url: undefined };
+    }
+  }
+
+  function getEffectiveBgNoiseConfig() {
+    const locked = bgNoiseLockedConfigRef.current;
+    if (bgNoiseLocked && locked) return locked;
+    return { enabled: bgNoiseEnabled, volume: bgNoiseVolume, url: bgNoiseUrl };
+  }
+
+  async function loadNoiseBuffer(ctx: AudioContext, url: string): Promise<AudioBuffer> {
+    // Fetch + decode in the same AudioContext so sample-rate conversion is consistent.
+    const res = await fetch(url, { cache: "force-cache" });
+    if (!res.ok) throw new Error(`Failed to load background audio: ${res.status}`);
+    const arr = await res.arrayBuffer();
+    // decodeAudioData is callback-based in some browsers; wrap it.
+    const buf: AudioBuffer = await new Promise((resolve, reject) => {
+      const anyCtx: any = ctx as any;
+      const p = anyCtx.decodeAudioData(arr, resolve, reject);
+      if (p && typeof p.then === "function") (p as Promise<AudioBuffer>).then(resolve).catch(reject);
+    });
+    return buf;
+  }
+
+  async function ensureBgNoiseRunning(ctx: AudioContext) {
+    const effective = getEffectiveBgNoiseConfig();
+    const effectiveUrl = effective.url;
+    const effectiveVolume = effective.volume;
+    const effectiveGain = Math.min(1, Math.max(0, effectiveVolume / 100));
+
+    // If already running, just sync level.
+    if (bgNoiseGainRef.current && bgNoiseSourceRef.current) {
+      bgNoiseGainRef.current.gain.setTargetAtTime(effectiveGain, ctx.currentTime, 0.02);
+      return;
+    }
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    gain.connect(ctx.destination);
+    bgNoiseGainRef.current = gain;
+
+    // (Re)load buffer if URL changed or we don't have one yet.
+    const key = `${effectiveUrl}@@${ctx.sampleRate}`;
+    if (!bgNoiseBufferRef.current || bgNoiseBufferKeyRef.current !== key) {
+      if (!effectiveUrl) throw new Error("No background sound selected");
+      bgNoiseBufferRef.current = await loadNoiseBuffer(ctx, effectiveUrl);
+      bgNoiseBufferKeyRef.current = key;
+    }
+
+    const src = ctx.createBufferSource();
+    src.buffer = bgNoiseBufferRef.current;
+    src.loop = true;
+    src.connect(gain);
+    src.start();
+    bgNoiseSourceRef.current = src;
+
+    // Ramp to target level (avoid clicks)
+    gain.gain.setTargetAtTime(effectiveGain, ctx.currentTime, 0.05);
+    pushEvent("bg_noise_started", { volume: effectiveVolume, url: effectiveUrl });
+  }
+
+  function stopPreview(reason: string) {
+    const el = previewAudioRef.current;
+    previewAudioRef.current = null;
+    setPreviewPlaying(false);
+    try {
+      el?.pause();
+    } catch {
+      // ignore
+    }
+    pushEvent("bg_noise_preview_stopped", { reason });
+  }
+
+  async function togglePreview() {
+    if (bgNoiseLocked) return;
+
+    if (previewPlaying) {
+      stopPreview("toggle_off");
+      return;
+    }
+
+    const url = bgNoiseUrl;
+    if (!url) return;
+
+    try {
+      const el = new Audio(url);
+      el.loop = true;
+      el.volume = Math.min(1, Math.max(0, bgNoiseVolume / 100));
+      previewAudioRef.current = el;
+      await el.play();
+      setPreviewPlaying(true);
+      pushEvent("bg_noise_preview_started", { url, volume: bgNoiseVolume });
+    } catch (e: any) {
+      stopPreview("preview_error");
+      toast({ variant: "destructive", title: "Preview failed", description: e?.message ?? "Unable to play preview" });
+    }
+  }
+
+  function stopBgNoise(reason: string) {
+    const ctx = playbackContextRef.current;
+    const gain = bgNoiseGainRef.current;
+    const src = bgNoiseSourceRef.current;
+    bgNoiseGainRef.current = null;
+    bgNoiseSourceRef.current = null;
+
+    try {
+      if (gain && ctx) {
+        // fast ramp down to avoid pop
+        try {
+          gain.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+        } catch {
+          // ignore
+        }
+      }
+      if (src) {
+        try {
+          src.stop();
+        } catch {
+          // ignore
+        }
+        try {
+          src.disconnect();
+        } catch {
+          // ignore
+        }
+      }
+      if (gain) {
+        try {
+          gain.disconnect();
+        } catch {
+          // ignore
+        }
+      }
+    } finally {
+      pushEvent("bg_noise_stopped", { reason });
+    }
   }
 
   function stopAllPlayback(reason: string) {
@@ -495,6 +731,15 @@ export default function AssistantConfig() {
       const ctx = await ensurePlaybackContext(sampleRate);
       if (ctx.state === "suspended") await ctx.resume();
 
+      // Keep background noise state in sync with playback context.
+      if (getEffectiveBgNoiseConfig().enabled) {
+        try {
+          await ensureBgNoiseRunning(ctx);
+        } catch {
+          // ignore
+        }
+      }
+
       const bytes = base64ToBytes(base64Audio);
       const pcm16 = new Int16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
       const float32 = pcm16ToFloat32(pcm16);
@@ -503,7 +748,9 @@ export default function AssistantConfig() {
 
       const src = ctx.createBufferSource();
       src.buffer = buffer;
-      src.connect(ctx.destination);
+  // NOTE: we connect TTS directly to destination; background noise is a
+  // separate looped source also connected to destination.
+  src.connect(ctx.destination);
 
       const chain = playbackChainRef.current;
       const startAt = chain ? Math.max(chain.nextTime, ctx.currentTime + 0.01) : ctx.currentTime + 0.01;
@@ -538,14 +785,34 @@ export default function AssistantConfig() {
       // DB-backed assistant config (new assistants live in Postgres, not USERS_DB)
       const res = await api.dashboard.getAssistant(encodeURIComponent(agentId));
       const a = res.assistant;
+
+      // Hydrate per-assistant background noise settings.
+      // Prefer DB fields; fall back to localStorage (per assistant) if DB unset.
+      try {
+        const local = loadBgNoiseLocalFallback(String(a.assistant_id));
+        const enabled = typeof a.bg_noise_enabled === "boolean" ? a.bg_noise_enabled : local.enabled;
+        const volume = Number.isFinite(Number(a.bg_noise_volume)) ? Number(a.bg_noise_volume) : local.volume;
+        const url = typeof a.bg_noise_url === "string" ? a.bg_noise_url : local.url;
+
+        if (typeof enabled === "boolean") setBgNoiseEnabled(enabled);
+        if (typeof volume === "number") setBgNoiseVolume(Math.min(100, Math.max(0, Math.round(volume))));
+        if (typeof url === "string") setBgNoiseUrl(url);
+      } catch {
+        // ignore
+      } finally {
+        bgNoiseAssistantHydratedRef.current = true;
+      }
+
       setAgent({
         id: String(a.assistant_id),
         display_name: a.display_name ?? undefined,
         script_text: a.script_text ?? undefined,
         speaker_id: a.speaker_id ?? null,
+        intro_message: a.intro_message ?? null,
       });
       setScriptText(a.script_text ?? "");
       setSelectedVoice(a.speaker_id ?? null);
+      setIntroMessage(a.intro_message ?? "");
     } catch (e: any) {
       const msg = e?.message ?? "Failed to load agent";
       setError(msg);
@@ -555,8 +822,31 @@ export default function AssistantConfig() {
     }
   }
 
+  // Reset assistant-scoped hydration when switching assistants.
+  useEffect(() => {
+    bgNoiseAssistantHydratedRef.current = false;
+    if (bgNoiseAssistantSaveTimerRef.current !== null) {
+      window.clearTimeout(bgNoiseAssistantSaveTimerRef.current);
+      bgNoiseAssistantSaveTimerRef.current = null;
+    }
+  }, [agentId]);
+
   async function saveAgent() {
     if (!agentId) return;
+    const configLockedNow =
+      callStarting ||
+      wsStatus === "connecting" ||
+      wsStatus === "connected" ||
+      wsStatus === "reconnecting" ||
+      micStatus === "streaming";
+    if (configLockedNow) {
+      toast({
+        variant: "destructive",
+        title: "Call active",
+        description: "Stop the call before saving script changes.",
+      });
+      return;
+    }
     setSaving(true);
     try {
       const res = await api.dashboard.updateAssistant(encodeURIComponent(agentId), {
@@ -568,6 +858,7 @@ export default function AssistantConfig() {
         display_name: a.display_name ?? undefined,
         script_text: a.script_text ?? undefined,
         speaker_id: a.speaker_id ?? null,
+        intro_message: a.intro_message ?? null,
       });
       setScriptText(a.script_text ?? "");
       toast({ title: "Saved", description: "Script updated" });
@@ -581,6 +872,20 @@ export default function AssistantConfig() {
 
   async function saveVoice() {
     if (!agentId) return;
+    const configLockedNow =
+      callStarting ||
+      wsStatus === "connecting" ||
+      wsStatus === "connected" ||
+      wsStatus === "reconnecting" ||
+      micStatus === "streaming";
+    if (configLockedNow) {
+      toast({
+        variant: "destructive",
+        title: "Call active",
+        description: "Stop the call before changing voice settings.",
+      });
+      return;
+    }
     setSavingVoice(true);
     try {
       const res = await api.dashboard.updateAssistantVoice(
@@ -596,8 +901,11 @@ export default function AssistantConfig() {
       const speakerToWarm = a.speaker_id ?? null;
       if (speakerToWarm) {
         setWarmingUpVoice(true);
+        // Pass the current intro message so the warmup pre-caches the
+        // assistant's own opening line with the newly selected voice.
+        const introToWarm = introMessage.trim() || undefined;
         api.dashboard
-          .warmupAssistantVoice(encodeURIComponent(agentId), speakerToWarm)
+          .warmupAssistantVoice(encodeURIComponent(agentId), speakerToWarm, introToWarm)
           .then((r) => {
             toast({
               title: "Voice ready",
@@ -617,6 +925,41 @@ export default function AssistantConfig() {
     }
   }
 
+  async function saveIntro() {
+    if (!agentId) return;
+    const configLockedNow =
+      callStarting ||
+      wsStatus === "connecting" ||
+      wsStatus === "connected" ||
+      wsStatus === "reconnecting" ||
+      micStatus === "streaming";
+    if (configLockedNow) {
+      toast({
+        variant: "destructive",
+        title: "Call active",
+        description: "Stop the call before saving intro message changes.",
+      });
+      return;
+    }
+    const trimmed = introMessage.trim();
+    if (!trimmed) {
+      toast({ variant: "destructive", title: "Intro required", description: "Please enter a First Intro Message before saving." });
+      return;
+    }
+    setSavingIntro(true);
+    try {
+      const res = await api.dashboard.updateAssistantIntro(encodeURIComponent(agentId), trimmed);
+      setAgent((prev) => prev ? { ...prev, intro_message: res.intro_message } : prev);
+      setIntroMessage(res.intro_message);
+      toast({ title: "Intro saved", description: "First Intro Message updated." });
+    } catch (e: any) {
+      const msg = e?.message ?? "Failed to save intro message";
+      toast({ variant: "destructive", title: "Save failed", description: msg });
+    } finally {
+      setSavingIntro(false);
+    }
+  }
+
   function closeWs() {
     const ws = wsRef.current;
     wsRef.current = null;
@@ -630,6 +973,7 @@ export default function AssistantConfig() {
 
   async function cleanupPlayback() {
     try {
+      stopBgNoise("cleanup");
       stopAllPlayback("cleanup");
       const ctx = playbackContextRef.current;
       playbackContextRef.current = null;
@@ -646,6 +990,142 @@ export default function AssistantConfig() {
       // ignore
     }
   }
+
+  // Load available background noises from manifest in /public/bg-noise.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setBgNoiseManifestError(null);
+        const res = await fetch("/bg-noise/manifest.json", { cache: "no-cache" });
+        if (!res.ok) throw new Error(`manifest ${res.status}`);
+        const manifest = (await res.json()) as BgNoiseManifest;
+        const sounds = Array.isArray(manifest?.sounds) ? manifest.sounds : [];
+        const opts = sounds
+          .filter((s) => s && typeof s.id === "string" && typeof s.label === "string" && typeof s.file === "string")
+          .map((s) => ({ id: s.id, label: s.label, url: `/bg-noise/${encodeURIComponent(s.file)}` }));
+        if (cancelled) return;
+        setBgNoiseOptions(opts);
+
+        // Choose a default if none selected yet.
+        if (!bgNoiseLocked && (!bgNoiseUrl || !opts.some((o) => o.url === bgNoiseUrl))) {
+          setBgNoiseUrl(opts[0]?.url ?? "");
+        }
+      } catch (e: any) {
+        if (cancelled) return;
+        setBgNoiseOptions([]);
+        setBgNoiseManifestError(e?.message ?? "Failed to load background sounds");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist + apply noise settings (but never mutate mid-call).
+  useEffect(() => {
+    const configLockedNow =
+      callStarting ||
+      wsStatus === "connecting" ||
+      wsStatus === "connected" ||
+      wsStatus === "reconnecting" ||
+      micStatus === "streaming";
+
+    if (!bgNoiseLocked && !configLockedNow) {
+      if (agentId) persistBgNoiseSettings(String(agentId), bgNoiseEnabled, bgNoiseVolume, bgNoiseUrl);
+
+      // Debounced per-assistant DB persistence.
+      if (agentId && bgNoiseAssistantHydratedRef.current) {
+        try {
+          if (bgNoiseAssistantSaveTimerRef.current !== null) {
+            window.clearTimeout(bgNoiseAssistantSaveTimerRef.current);
+            bgNoiseAssistantSaveTimerRef.current = null;
+          }
+
+          bgNoiseAssistantSaveTimerRef.current = window.setTimeout(() => {
+            bgNoiseAssistantSaveTimerRef.current = null;
+            void api.dashboard.updateAssistant(encodeURIComponent(String(agentId)), {
+              bg_noise_enabled: bgNoiseEnabled,
+              bg_noise_volume: bgNoiseVolume,
+              bg_noise_url: bgNoiseUrl,
+            });
+          }, 500);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (!bgNoiseEnabled && previewPlaying) {
+      stopPreview("disabled");
+    }
+
+    const ctx = playbackContextRef.current;
+    if (!ctx) return;
+
+    if (getEffectiveBgNoiseConfig().enabled) {
+      ensureBgNoiseRunning(ctx).catch(() => {
+        /* ignore */
+      });
+    } else {
+      stopBgNoise("disabled");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bgNoiseEnabled, bgNoiseVolume, bgNoiseUrl, bgNoiseLocked, previewPlaying, agentId, callStarting, wsStatus, micStatus]);
+
+  // Keep preview audio volume in sync.
+  useEffect(() => {
+    const el = previewAudioRef.current;
+    if (!el) return;
+    el.volume = Math.min(1, Math.max(0, bgNoiseVolume / 100));
+  }, [bgNoiseVolume]);
+
+  useEffect(() => {
+    return () => {
+      stopPreview("unmount");
+      if (bgNoiseAssistantSaveTimerRef.current !== null) {
+        window.clearTimeout(bgNoiseAssistantSaveTimerRef.current);
+        bgNoiseAssistantSaveTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Freeze *all* config changes once Start Call is pressed (and while the call is active).
+  useEffect(() => {
+    const configLockedNow =
+      callStarting ||
+      wsStatus === "connecting" ||
+      wsStatus === "connected" ||
+      wsStatus === "reconnecting" ||
+      micStatus === "streaming";
+
+    if (configLockedNow && !bgNoiseLocked) {
+      // Hard guarantee: cancel any pending debounced DB write before the call begins.
+      if (bgNoiseAssistantSaveTimerRef.current !== null) {
+        window.clearTimeout(bgNoiseAssistantSaveTimerRef.current);
+        bgNoiseAssistantSaveTimerRef.current = null;
+      }
+
+      setBgNoiseLocked(true);
+      bgNoiseLockedConfigRef.current = {
+        enabled: bgNoiseEnabled,
+        volume: bgNoiseVolume,
+        url: bgNoiseUrl,
+      };
+      stopPreview("call_started");
+      pushEvent("bg_noise_locked", { url: bgNoiseUrl, volume: bgNoiseVolume, enabled: bgNoiseEnabled });
+      return;
+    }
+
+    if (!configLockedNow && bgNoiseLocked) {
+      setBgNoiseLocked(false);
+      bgNoiseLockedConfigRef.current = null;
+      pushEvent("bg_noise_unlocked", {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callStarting, wsStatus, micStatus]);
 
   async function stopMicStreaming() {
     try {
@@ -934,6 +1414,17 @@ export default function AssistantConfig() {
 
   async function startCalling() {
     if (!agentId) return;
+
+    // Block call if no intro message is configured.
+    if (!agent?.intro_message?.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Intro message required",
+        description: "Please save a First Intro Message before starting a call.",
+      });
+      return;
+    }
+
     setCallStarting(true);
     try {
       const token = getAuthToken();
@@ -947,6 +1438,10 @@ export default function AssistantConfig() {
       pushEvent("session_created", created);
 
       const wsUrl = getWsUrl().replace(/\/$/, "");
+      pushEvent("ws_connect_attempt", {
+        base: wsUrl,
+        full: `${wsUrl}/ws/${created.session_id}`,
+      });
 
       setWsStatus("connecting");
       // Pass token for WS auth. Server supports Authorization header OR query param.
@@ -1229,6 +1724,13 @@ export default function AssistantConfig() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
 
+  const configLocked =
+    callStarting ||
+    wsStatus === "connecting" ||
+    wsStatus === "connected" ||
+    wsStatus === "reconnecting" ||
+    micStatus === "streaming";
+
   const debugEvents = events;
 
   if (loading) {
@@ -1324,7 +1826,7 @@ export default function AssistantConfig() {
           ) : (
             <Button
               onClick={() => startCalling()}
-              disabled={callStarting || wsStatus === "connecting"}
+              disabled={callStarting || wsStatus === "connecting" || !agent?.intro_message?.trim()}
               size="lg"
             >
               {callStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1446,19 +1948,101 @@ export default function AssistantConfig() {
                   <Volume2 className="h-4 w-4" />
                   Voice
                 </CardTitle>
-                <CardDescription>Select the TTS voice for this assistant.</CardDescription>
+                <CardDescription>Select the Call Voice and the BG noise for this assistant.</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 rounded-md border bg-muted/30 px-3 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">Background noise (test)</div>
+                    </div>
+                    <Switch
+                      checked={bgNoiseEnabled}
+                      onCheckedChange={(v) => setBgNoiseEnabled(Boolean(v))}
+                      disabled={bgNoiseLocked || configLocked}
+                    />
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="w-24 text-xs text-muted-foreground">Volume</div>
+                    <input
+                      className="flex-1"
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={bgNoiseVolume}
+                      onChange={(e) => setBgNoiseVolume(Number(e.target.value))}
+                      disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked}
+                    />
+                    <div className="w-12 text-right text-xs tabular-nums text-muted-foreground">
+                      {bgNoiseVolume}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="w-24 text-xs text-muted-foreground">Sound</div>
+                    <div className="flex-1 flex items-center gap-2">
+                      <Select
+                        value={bgNoiseUrl || "__none__"}
+                        onValueChange={(v) => {
+                          if (configLocked) return;
+                          stopPreview("selection_change");
+                          setBgNoiseUrl(v === "__none__" ? "" : v);
+                        }}
+                        disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder={bgNoiseOptions.length ? "Select" : "No sounds found"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">None</SelectItem>
+                          {bgNoiseOptions.map((o) => (
+                            <SelectItem key={o.id} value={o.url}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void togglePreview()}
+                        disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked || !bgNoiseUrl}
+                      >
+                        {previewPlaying ? "Stop" : "Preview"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {bgNoiseLocked && (
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      Locked during active call.
+                    </div>
+                  )}
+
+                  {!!bgNoiseManifestError && (
+                    <div className="mt-2 text-[11px] text-red-600">
+                      Failed to load background sounds: {bgNoiseManifestError}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2">
                   <Select
                     value={selectedVoice ?? "__default__"}
-                    onValueChange={(v) => setSelectedVoice(v === "__default__" ? null : v)}
+                    onValueChange={(v) => {
+                      if (configLocked) return;
+                      setSelectedVoice(v === "__default__" ? null : v);
+                    }}
+                    disabled={configLocked}
                   >
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="System default (p226)" />
+                      <SelectValue placeholder="Select voice" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__default__">System default (p226)</SelectItem>
                       {voices?.map((v) => (
                         <SelectItem key={v.speaker_id} value={v.speaker_id}>
                           {v.display_name} — {v.accent} ({v.gender})
@@ -1468,7 +2052,7 @@ export default function AssistantConfig() {
                   </Select>
                   <Button
                     onClick={() => saveVoice()}
-                    disabled={savingVoice || !isVoiceDirty}
+                    disabled={configLocked || savingVoice || !isVoiceDirty}
                     size="sm"
                     className="shrink-0"
                   >
@@ -1485,12 +2069,46 @@ export default function AssistantConfig() {
             </Card>
           </motion.div>
 
-          {/* Conversation Script — full detail, no blur */}
-          <motion.div variants={item} className="flex-1 flex flex-col min-h-0">
+          {/* First Intro Message */}
+          <motion.div variants={item}>
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>First Intro Message</CardTitle>
+                    <CardDescription>Spoken when the call starts. Required*.</CardDescription>
+                  </div>
+                  {!agent?.intro_message?.trim() && (
+                    <div className="flex items-center gap-1 text-xs text-destructive shrink-0">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      <span>Required</span>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="e.g. Hi, I'm Mark from Pathburn — the first AI-powered truck dispatcher. How are you today?"
+                  value={introMessage}
+                  onChange={(e) => setIntroMessage(e.target.value)}
+                  className="min-h-[80px] resize-none text-sm"
+                  disabled={configLocked}
+                />
+                <div className="flex justify-end pt-3">
+                  <Button onClick={() => saveIntro()} disabled={configLocked || savingIntro || !isIntroDirty || !introMessage.trim()} size="sm">
+                    {savingIntro ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save Intro
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Conversation Script — full detail, no blur */}          <motion.div variants={item} className="flex-1 flex flex-col min-h-0">
             <Card className="flex-1 flex flex-col">
               <CardHeader className="pb-3">
                 <CardTitle>Conversation Script</CardTitle>
-                <CardDescription>Edit the agent's conversation script.</CardDescription>
+                <CardDescription>Conversation Script for the agent.</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col min-h-0">
                 <Textarea
@@ -1499,9 +2117,10 @@ export default function AssistantConfig() {
                   value={scriptText}
                   onChange={(e) => setScriptText(e.target.value)}
                   className="flex-1 min-h-[200px] resize-none text-sm font-mono leading-relaxed"
+                  disabled={configLocked}
                 />
                 <div className="flex justify-end pt-3">
-                  <Button onClick={() => saveAgent()} disabled={saving || !isDirty} size="sm">
+                  <Button onClick={() => saveAgent()} disabled={configLocked || saving || !isDirty} size="sm">
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save Script
                   </Button>

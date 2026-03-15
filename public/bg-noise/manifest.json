@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "sounds": [
+    { "id": "office_6", "label": "Office 6", "file": "office-6.mp3" },
+    { "id": "office_3", "label": "Office 3", "file": "office-3.mp3" },
+    { "id": "office_4", "label": "Office 4", "file": "office-4.mp3" },
+    { "id": "office_2", "label": "Office 2", "file": "office-2.mp3" },
+    { "id": "office_5", "label": "Office 5", "file": "office-5.mp3" }
+  ]
+}
