@@ -30,12 +30,10 @@ import Settings from "./pages/Settings";
 import PaygDashboard from "./pages/payg/PaygDashboard";
 import PaygAssistants from "./pages/payg/PaygAssistants";
 import PaygCalls from "./pages/payg/PaygCalls";
-import PaygCrm from "./pages/payg/PaygCrm";
 import PaygAnalytics from "./pages/payg/PaygAnalytics";
-import PaygCalendar from "./pages/payg/PaygCalendar";
 import PaygVoices from "./pages/payg/PaygVoices";
 import PaygNumbersTwilio from "./pages/payg/numbers/PaygNumbersTwilio";
-import PaygSettings from "./pages/payg/PaygSettings";
+import PaygSettings from "./pages/payg/PaygSettings.tsx";
 
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
@@ -111,9 +109,7 @@ const AppContent = () => {
         <Route index element={<PaygDashboard />} />
         <Route path="assistants" element={<PaygAssistants />} />
         <Route path="calls" element={<PaygCalls />} />
-        <Route path="crm" element={<PaygCrm />} />
         <Route path="analytics" element={<PaygAnalytics />} />
-        <Route path="calendar" element={<PaygCalendar />} />
         <Route path="voices" element={<PaygVoices />} />
         <Route path="numbers" element={<Navigate to="/payg/numbers/twilio" replace />} />
         <Route path="numbers/twilio" element={<PaygNumbersTwilio />} />

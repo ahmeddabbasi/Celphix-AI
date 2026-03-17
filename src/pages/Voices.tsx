@@ -67,7 +67,7 @@ export default function Voices() {
       if (genderFilters.size > 0 && !genderFilters.has(v.gender)) return false;
       return true;
     });
-  }, [search, accentFilters, genderFilters]);
+  }, [voices, search, accentFilters, genderFilters]);
 
   // ── helpers ──────────────────────────────────────────────────────────────
   function toggleAccent(accent: VoiceAccent) {

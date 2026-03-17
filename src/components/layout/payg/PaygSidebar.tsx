@@ -10,14 +10,12 @@ import {
   LayoutDashboard,
   Bot,
   Phone,
-  Users,
   Hash,
   ChevronDown,
   Zap,
   LogOut,
   User,
   BarChart3,
-  Calendar as CalendarIcon,
   Mic2,
   Settings,
 } from "lucide-react";
@@ -43,9 +41,7 @@ const navItems = [
   { title: "Dashboard",  url: "/payg",             icon: LayoutDashboard },
   { title: "Assistants", url: "/payg/assistants",  icon: Bot             },
   { title: "Voices",     url: "/payg/voices",      icon: Mic2            },
-  { title: "CRM",        url: "/payg/crm",         icon: Users           },
   { title: "Analytics",  url: "/payg/analytics",   icon: BarChart3       },
-  { title: "Calendar",   url: "/payg/calendar",    icon: CalendarIcon    },
   { title: "Calls",      url: "/payg/calls",       icon: Phone           },
 ];
 

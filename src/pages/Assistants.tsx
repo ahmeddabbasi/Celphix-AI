@@ -71,16 +71,16 @@ function ActiveCallCard({ a }: { a: AssistantStat }) {
       whileHover={{ scale: 1.02 }}
       onClick={() => navigate(`/assistants/${a.assistant_id}`)}
       className={cn(
-        "relative flex-shrink-0 w-44 h-44 rounded-2xl border cursor-pointer",
+        "active-assistant-glow relative flex-shrink-0 w-44 h-44 rounded-2xl border cursor-pointer",
         "bg-gradient-to-br from-primary/10 to-card",
-        "border-primary/40 shadow-lg shadow-primary/10",
+        "border-accent-yellow/25 shadow-lg shadow-primary/10",
         "flex flex-col justify-between p-4 overflow-hidden",
       )}
     >
       {/* Pulsing live indicator */}
       <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
       </span>
 
       <div>

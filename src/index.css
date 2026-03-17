@@ -217,6 +217,69 @@
     background: hsl(142 72% 42% / 0.5);
   }
 
+  /* Active Assistant card — continuous yellow edge glow */
+  .active-assistant-glow {
+    @apply relative overflow-hidden;
+  }
+
+  .active-assistant-glow::before,
+  .active-assistant-glow::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 50%;
+    height: 5px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--accent-yellow) / 0.95),
+      transparent
+    );
+    box-shadow: 0 0 12px hsl(var(--accent-yellow) / 0.45);
+    opacity: 0.9;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(200%, 0, 0);
+  }
+
+  .active-assistant-glow::before {
+    top: 0;
+    animation: active-assistant-glow-top 2.8s linear infinite;
+  }
+
+  .active-assistant-glow::after {
+    bottom: 0;
+    animation: active-assistant-glow-bottom 2.8s linear infinite;
+  }
+
+  @keyframes active-assistant-glow-top {
+    0% {
+      transform: translate3d(200%, 0, 0);
+    }
+    100% {
+      transform: translate3d(-200%, 0, 0);
+    }
+  }
+
+  @keyframes active-assistant-glow-bottom {
+    0% {
+      transform: translate3d(-200%, 0, 0);
+    }
+    100% {
+      transform: translate3d(200%, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .active-assistant-glow::before,
+    .active-assistant-glow::after {
+      animation: none;
+      opacity: 0.35;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
   /* Skeleton loader */
   .skeleton {
     @apply relative overflow-hidden bg-muted;

@@ -1,4 +1,4 @@
-import { Play, Square, User, Volume2 } from "lucide-react";
+import { Play, Square, User, Volume2, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,15 +22,23 @@ const ACCENT_COLORS: Record<string, string> = {
 };
 
 const GENDER_COLORS: Record<string, string> = {
-  Male:   "bg-accent/10 text-accent-foreground border-accent/20",
-  Female: "bg-accent/10 text-accent-foreground border-accent/20",
+  Male:   "bg-success/10 text-success border-success/20",
+  Female: "bg-success/10 text-success border-success/20",
 };
 
-/** Avatar initials derived from the display name. */
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+function GenderAvatarIcon({ gender }: { gender: string }) {
+  const g = gender.trim().toLowerCase();
+  const mark = g.startsWith("f") ? "F" : g.startsWith("m") ? "M" : null;
+  return (
+    <div className="relative">
+      <UserRound className="h-5 w-5" />
+      {mark ? (
+        <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-background/80 border border-border px-1 text-[10px] font-semibold leading-none text-muted-foreground">
+          {mark}
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 export function VoiceCard({ voice }: VoiceCardProps) {
@@ -71,7 +79,7 @@ export function VoiceCard({ voice }: VoiceCardProps) {
             {active ? (
               <Volume2 className="h-5 w-5 animate-pulse" />
             ) : (
-              initials(voice.displayName)
+              <GenderAvatarIcon gender={voice.gender} />
             )}
           </div>
           <div className="min-w-0 flex-1">

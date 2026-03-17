@@ -56,9 +56,8 @@ export function PaygTopBar() {
         {hasCCAccess && (
           <Link to="/">
             <Button
-              variant="ghost"
               size="sm"
-              className="gap-2 font-bold text-white hover:text-[#FFEA00] hover:bg-white/10"
+              className="gap-2 font-bold bg-accent-yellow text-black hover:bg-accent-yellow/90 hover:text-black"
             >
               <Monitor className="h-4 w-4" />
               <span>Command Center</span>
@@ -81,7 +80,12 @@ export function PaygTopBar() {
         )}
 
         {/* Notifications */}
-        <NotificationPanel accent="amber" isAdmin={isAdmin} />
+        <NotificationPanel
+          accent="amber"
+          isAdmin={isAdmin}
+          triggerClassName="bg-accent-yellow text-black hover:bg-accent-yellow/90 hover:text-black"
+          triggerIconClassName="text-black"
+        />
 
         {/* Profile dropdown */}
         <DropdownMenu>

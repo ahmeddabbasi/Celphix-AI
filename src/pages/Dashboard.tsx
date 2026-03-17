@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PhoneCall, Clock, Bot } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -10,10 +10,9 @@ import {
   type DashboardWindow,
 } from "@/hooks/use-dashboard-queries";
 import { ActivityTrendsChart } from "@/components/dashboard/ActivityTrendsChart";
-import { SessionInfo } from "@/components/dashboard/SessionInfo";
 import { ActiveAssistants } from "@/components/dashboard/ActiveAssistants";
+import { Dialing } from "@/components/dashboard/Dialing";
 import { TopPerformers } from "@/components/dashboard/TopPerformers";
-import { useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -160,7 +159,7 @@ export default function Dashboard() {
       {/* ── Active assistants + Session info ───────────────────────────── */}
       <motion.div variants={item} className="grid gap-4 lg:grid-cols-2">
         <ActiveAssistants />
-        <SessionInfo />
+        <Dialing />
       </motion.div>
 
       {/* ── Top performers + Activity trends ───────────────────────────── */}

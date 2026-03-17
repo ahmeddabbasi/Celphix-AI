@@ -213,9 +213,18 @@ interface NotificationPanelProps {
   /** "primary" for Command Center, "amber" for Pay-As-You-Go */
   accent?: "primary" | "amber";
   isAdmin: boolean;
+  /** Optional override for the trigger <Button> (e.g., PAYG yellow trigger) */
+  triggerClassName?: string;
+  /** Optional override for the bell icon inside the trigger */
+  triggerIconClassName?: string;
 }
 
-export function NotificationPanel({ accent = "primary", isAdmin }: NotificationPanelProps) {
+export function NotificationPanel({
+  accent = "primary",
+  isAdmin,
+  triggerClassName,
+  triggerIconClassName,
+}: NotificationPanelProps) {
   const [open, setOpen] = useState(false);
 
   const {
@@ -252,8 +261,8 @@ export function NotificationPanel({ accent = "primary", isAdmin }: NotificationP
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4 text-muted-foreground" />
+        <Button variant="ghost" size="icon" className={"relative " + (triggerClassName ?? "")}>
+          <Bell className={"h-4 w-4 " + (triggerIconClassName ?? "text-muted-foreground")} />
           {unreadCount > 0 && (
             <span
               className={`absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${badgeColor}`}

@@ -1,8 +1,6 @@
 /**
- * Shared placeholder factory for PAYG pages.
- * Each page is a thin wrapper that renders a consistent "coming soon" card
- * with a page-specific icon and title.
- * Functionality will be customised per page in future sprints.
+ * Shared PAYG page scaffold.
+ * Renders a consistent layout shell for pages that are still being built.
  */
 
 import { motion } from "framer-motion";
@@ -35,6 +33,40 @@ export function PaygPlaceholder({ title, subtitle, Icon }: PaygPlaceholderProps)
       </motion.div>
 
       <motion.div variants={item}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className="border-accent/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Today</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">12</div>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-accent/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">This week</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">84</div>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-accent/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Estimated cost</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">$0.00</div>
+              <p className="text-xs text-muted-foreground">This period</p>
+            </CardContent>
+          </Card>
+        </div>
+      </motion.div>
+
+      <motion.div variants={item}>
         <Card className="border-accent/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -42,11 +74,31 @@ export function PaygPlaceholder({ title, subtitle, Icon }: PaygPlaceholderProps)
               Pay-As-You-Go — {title}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              This section is reserved for Pay-As-You-Go {title.toLowerCase()} features.
-              Functionality will be tailored and implemented in a future update.
-            </p>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">Overview and recent activity.</p>
+
+            <div className="rounded-md border border-border">
+              <div className="grid grid-cols-3 gap-3 border-b border-border bg-muted/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground">
+                <span>Item</span>
+                <span>Status</span>
+                <span className="text-right">Updated</span>
+              </div>
+              {[
+                { name: `${title} A`, status: "Active", updated: "2m ago" },
+                { name: `${title} B`, status: "Idle", updated: "12m ago" },
+                { name: `${title} C`, status: "Queued", updated: "1h ago" },
+                { name: `${title} D`, status: "Active", updated: "3h ago" },
+              ].map((row) => (
+                <div
+                  key={row.name}
+                  className="grid grid-cols-3 gap-3 px-3 py-2 text-sm text-foreground"
+                >
+                  <span className="truncate font-medium">{row.name}</span>
+                  <span className="text-muted-foreground">{row.status}</span>
+                  <span className="text-right text-muted-foreground">{row.updated}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </motion.div>

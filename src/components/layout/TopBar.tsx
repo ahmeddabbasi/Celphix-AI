@@ -6,9 +6,8 @@
  * - Shows "Pay-As-You-Go" switcher button for approved/admin users
  */
 
-import { Search, ChevronDown, Shield, User, LogOut, Settings2, Zap } from "lucide-react";
+import { ChevronDown, Shield, User, LogOut, Settings2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -39,16 +38,9 @@ export function TopBar() {
   return (
     <header className="cc-topbar flex h-14 items-center justify-between border-b px-6">
 
-      {/* Left — sidebar toggle + search */}
+      {/* Left — sidebar toggle */}
       <div className="flex items-center gap-4">
         <SidebarTrigger className="-ml-2 text-white hover:text-[#ffea00] transition-colors" />
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
-          <Input
-            placeholder="Search..."
-            className="w-64 bg-white/10 border-white/20 pl-9 text-sm text-white placeholder:text-white/50 focus-visible:ring-1 focus-visible:ring-[#ffea00]/50"
-          />
-        </div>
       </div>
 
       {/* Right */}
