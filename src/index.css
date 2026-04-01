@@ -1,0 +1,996 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/dm-sans/700.css";
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  SALESAGENT DESIGN SYSTEM
+  Palette: #008613 (brand green) · #FFEA00 (accent yellow) · #FFFFFF (white)
+
+  Token strategy (dark-mode first):
+    Background     — near-black with green tint
+    Card / Surface — layered dark green-tinted surfaces
+    Primary        — brand green, brightened for dark-bg contrast
+    Accent         — yellow highlight
+    Foreground     — white text
+    Muted          — subdued green-tinted grey for secondary text / bg
+    Destructive    — warm red (semantic only, kept minimal)
+    Border         — subtle green-tinted dark line
+*/
+
+@layer base {
+  :root {
+    /* ── Core surfaces ────────────────────────────────────────── */
+    --background:          142 20% 4%;      /* #080f09 — near-black, green tint      */
+    --foreground:            0  0% 98%;     /* #fafafa — white text                  */
+
+    --card:                142 18% 7%;      /* #0d1510 — card surface                */
+    --card-foreground:       0  0% 98%;
+
+    --popover:             142 18% 7%;
+    --popover-foreground:    0  0% 98%;
+
+    /* ── Primary — brand green ────────────────────────────────── */
+    --primary:             142 72% 42%;     /* #1db954-ish bright green              */
+    --primary-foreground:    0  0% 100%;    /* white on green button                 */
+
+    /* ── Secondary — mid-dark green tint ─────────────────────── */
+    --secondary:           142 14% 13%;
+    --secondary-foreground:  0  0% 90%;
+
+    /* ── Muted ────────────────────────────────────────────────── */
+    --muted:               142 12% 12%;
+    --muted-foreground:    142  8% 52%;
+
+    /* ── Accent — yellow highlight ────────────────────────────── */
+  --accent:               56 100% 50%;    /* #FFEA00 yellow                        */
+    --accent-foreground:   142 20%  6%;     /* very dark for text on yellow          */
+
+    /* ── Semantic ─────────────────────────────────────────────── */
+    --destructive:           0 65% 50%;
+    --destructive-foreground: 0  0% 98%;
+
+    --success:             142 72% 42%;     /* same as primary                       */
+    --success-foreground:    0  0% 100%;
+
+    --warning:              56 100% 50%;    /* yellow                                */
+    --warning-foreground:  142 20%  6%;
+
+    /* ── Input / ring / border ────────────────────────────────── */
+    --border:              142 18% 14%;
+    --input:               142 18% 14%;
+    --ring:                142 72% 42%;     /* green focus ring                      */
+
+    --radius: 0.5rem;
+
+    /* Fixed topbar height for layout offsetting */
+    --topbar-h: 64px;
+
+    /* ── Editorial rhythm + motion primitives (palette-safe) ─────────── */
+    --space-macro: clamp(64px, 10vw, 120px);
+    --space-mid: clamp(24px, 4vw, 48px);
+    --space-micro: clamp(12px, 2vw, 20px);
+
+    --page-pad-x: clamp(16px, 5vw, 40px);
+    --page-pad-y: clamp(18px, 4vw, 40px);
+
+    --text-display: clamp(2.5rem, 6vw, 5rem);
+    --text-h1: clamp(2rem, 4vw, 3.25rem);
+    --text-h2: clamp(1.5rem, 3vw, 2.25rem);
+    --text-h3: clamp(1.15rem, 2vw, 1.5rem);
+    --text-body: clamp(0.9375rem, 1.5vw, 1rem);
+    --text-caption: clamp(0.75rem, 1vw, 0.8125rem);
+
+    --leading-tight: 1.1;
+    --leading-normal: 1.55;
+    --leading-loose: 1.8;
+
+    --tracking-tight: -0.03em;
+    --tracking-wide: 0.08em;
+
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --shadow-ambient: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-elevated: 0 8px 32px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-floating: 0 24px 64px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.06);
+
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    --sidebar-background:  142 20% 5%;
+    --sidebar-foreground:  142  8% 62%;
+    --sidebar-primary:     142 72% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      142 14% 11%;
+    --sidebar-accent-foreground:  0 0% 95%;
+    --sidebar-border:      142 18% 11%;
+    --sidebar-ring:        142 72% 42%;
+
+    /* ── Custom surface layers ────────────────────────────────── */
+    --surface-1:           142 18%  5%;
+    --surface-2:           142 16%  8%;
+    --surface-3:           142 14% 11%;
+
+    /* ── Text scale ───────────────────────────────────────────── */
+    --text-primary:          0  0% 98%;
+    --text-secondary:      142  8% 62%;
+    --text-tertiary:       142  6% 42%;
+
+    /* ── Accent aliases (for components that reference these) ─── */
+    --accent-green:        142 72% 42%;
+    --accent-green-muted:  142 40% 18%;
+    --accent-yellow:        56 100% 50%;
+    --accent-yellow-muted:  56  80% 22%;
+    --accent-red:            0 65% 50%;
+    /* Keep legacy names so existing components don't break */
+    --accent-cyan:         142 72% 42%;
+    --accent-cyan-muted:   142 40% 18%;
+    --accent-blue:         142 50% 55%;
+    --accent-purple:       142 40% 50%;
+  }
+
+  /* ── Light mode (rarely used, but mapped coherently) ───────── */
+  .light {
+    --background:            0  0% 100%;
+    --foreground:          142 20%  6%;
+
+    --card:                  0  0% 100%;
+    --card-foreground:     142 20%  6%;
+
+    --popover:               0  0% 100%;
+    --popover-foreground:  142 20%  6%;
+
+  --primary:             142 100% 26%;    /* #008613 — true brand green on white   */
+    --primary-foreground:    0  0% 100%;
+
+    --secondary:           142  8% 94%;
+    --secondary-foreground:142 20%  6%;
+
+    --muted:               142  8% 94%;
+    --muted-foreground:    142  8% 40%;
+
+    --accent:               56 100% 50%;
+    --accent-foreground:   142 20%  6%;
+
+    --destructive:           0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success:             142 100% 26%;
+    --success-foreground:    0  0% 100%;
+
+    --warning:              56 100% 44%;
+    --warning-foreground:  142 20%  6%;
+
+    --border:              142 18% 88%;
+    --input:               142 18% 88%;
+    --ring:                142 100% 26%;
+
+    --sidebar-background:  142  8% 97%;
+    --sidebar-foreground:  142 10% 30%;
+    --sidebar-primary:     142 100% 26%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      142  8% 92%;
+    --sidebar-accent-foreground:  142 20% 6%;
+    --sidebar-border:      142 18% 88%;
+    --sidebar-ring:        142 100% 26%;
+  }
+
+  /* ── PAYG accent override (scoped to PAYG shell) ─────────────────────── */
+  .payg-shell {
+    /* PAYG accent: #008631 → hsl(142 100% 26%) */
+    --primary:             142 100% 26%;
+    --ring:                142 100% 26%;
+    --success:             142 100% 26%;
+    --accent-green:        142 100% 26%;
+    --accent-cyan:         142 100% 26%;
+
+    --sidebar-primary:     142 100% 26%;
+    --sidebar-ring:        142 100% 26%;
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --topbar-h: 56px;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: "DM Sans", "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-size: var(--text-body);
+    line-height: var(--leading-normal);
+  }
+
+  h1, h2, h3 {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  h1 { font-size: var(--text-h1); line-height: var(--leading-tight); }
+  h2 { font-size: var(--text-h2); line-height: var(--leading-tight); }
+  h3 { font-size: var(--text-h3); line-height: var(--leading-tight); }
+
+  /* Monospace utility for IDs, tokens, code */
+  .font-mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  /* Selection highlight */
+  ::selection {
+    background: hsl(142 72% 42% / 0.35);
+    color: hsl(0 0% 100%);
+  }
+}
+
+@layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Dashboard layout: fixed full-width topbar + body below */
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: var(--topbar-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 clamp(16px, 3vw, 40px);
+    background: hsl(var(--background));
+    z-index: 1000;
+    box-sizing: border-box;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .topbar__logo {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .topbar__logo-img {
+    height: clamp(32px, 4vw, 40px);
+    width: auto;
+    display: block;
+    object-fit: contain;
+    filter: contrast(1.1) saturate(1.1);
+    opacity: 1;
+  }
+
+  .topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1.5vw, 20px);
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  .layout-body {
+    display: flex;
+    flex-direction: row;
+    margin-top: var(--topbar-h);
+    min-height: calc(100vh - var(--topbar-h));
+    width: 100%;
+  }
+
+  /* Shared brand marks */
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    line-height: 1;
+  }
+
+  .header-logo {
+    height: clamp(28px, 4vw, 40px);
+    width: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  /* NOTE: logo is now in the topbar only (not in sidebar/nav). */
+
+  .login-logo {
+    width: clamp(120px, 20vw, 200px);
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+  }
+
+  /* Login page — two-panel split layout */
+  .login-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  /* Login must never start invisible (safety net vs. scroll-reveal). */
+  .login-page [data-reveal] {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .login-panel--brand {
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(40px, 6vw, 80px);
+  }
+
+  .login-panel--auth {
+    background-color: #214226;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(40px, 6vw, 80px);
+    color: #ffffff;
+  }
+
+  .login-panel__inner {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .login-intro {
+    margin-top: 14px;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.62);
+    text-align: center;
+  }
+
+  .login-auth-title {
+    font-size: 1.75rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+
+  .login-auth-subtitle {
+    margin-top: 6px;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .login-auth-loading {
+    display: flex;
+    height: 40px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+  }
+
+  .login-auth-divider {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .login-auth-divider__line {
+    height: 1px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .login-auth-divider__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.72);
+    user-select: none;
+  }
+
+  .login-auth-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .login-auth-input {
+    height: 44px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+
+  .login-auth-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .login-auth-input:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.22);
+    outline-offset: 2px;
+  }
+
+  .login-auth-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.65);
+    transition: color 0.15s ease;
+  }
+
+  .login-auth-toggle:hover {
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .login-auth-toggle:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .login-auth-submit {
+    margin-top: 8px;
+    width: 100%;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: filter 0.2s ease, transform 0.15s ease;
+  }
+
+  .login-auth-submit[data-loading="true"] {
+    transition: filter 0.2s ease;
+  }
+
+  .login-auth-submit:hover {
+    filter: brightness(1.12);
+  }
+
+  .login-auth-submit:not([data-loading="true"]):active {
+    transform: scale(0.98);
+  }
+
+  .login-auth-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .login-auth-footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .signup-prompt {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .signup-link {
+    color: rgba(255, 255, 255, 0.92);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (max-width: 767px) {
+    .login-page {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+    }
+
+    .login-panel--brand {
+      padding: clamp(32px, 8vw, 48px) clamp(20px, 5vw, 40px);
+      min-height: 40vh;
+    }
+
+    .login-panel--auth {
+      min-height: 60vh;
+    }
+  }
+
+  /* PAYG topbar color override */
+  .payg-shell .topbar {
+    background-color: #214226;
+    color: #ffffff;
+  }
+
+  .payg-shell .topbar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  /* Command Center: Start Dialing for All button */
+  .btn--start-dialing {
+    background-color: #214226 !important;
+    color: #ffffff !important;
+    border: none !important;
+    transition: filter 0.2s ease, transform 0.15s ease;
+  }
+
+  /* PAYG: Start Dialing for All button (explicit spec color) */
+  .btn--start-dialing-payg {
+    background-color: #008613 !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: none !important;
+    opacity: 1 !important;
+    /* Defend against Tailwind's bg-opacity utilities */
+    --tw-bg-opacity: 1 !important;
+    transition: transform 0.15s ease;
+  }
+
+  .btn--start-dialing-payg:hover {
+    background-color: #008613 !important;
+    background-image: none !important;
+  }
+
+  .btn--start-dialing-payg:active {
+    background-color: #008613 !important;
+    background-image: none !important;
+    transform: scale(0.98);
+  }
+
+  .btn--start-dialing-payg:focus-visible {
+    outline: 3px solid rgba(0, 134, 19, 0.4);
+    outline-offset: 3px;
+  }
+
+  .btn--start-dialing-payg:disabled {
+    filter: grayscale(0.4) opacity(0.5);
+    cursor: not-allowed;
+  }
+
+  .btn--start-dialing:hover {
+    filter: brightness(1.15);
+  }
+
+  .btn--start-dialing:active {
+    filter: brightness(0.9);
+    transform: scale(0.98);
+  }
+
+  .btn--start-dialing:focus-visible {
+    outline: 3px solid rgba(33, 66, 38, 0.4);
+    outline-offset: 3px;
+  }
+
+  .btn--start-dialing:disabled {
+    filter: grayscale(0.4) opacity(0.5);
+    cursor: not-allowed;
+  }
+
+  /* Voices: Play Sample button state system */
+  .btn--play-sample {
+    background-color: hsl(var(--accent-yellow));
+    color: hsl(var(--accent-foreground));
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease, filter 0.2s ease;
+  }
+
+  .btn--play-sample.is-playing {
+    background-color: #214226;
+    color: #ffffff;
+  }
+
+  .btn--play-sample:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn--play-sample.is-playing:hover {
+    filter: brightness(1.15);
+  }
+
+  .btn--play-sample:active {
+    transform: scale(0.97);
+  }
+
+  /* Voice logos — bolder + more prominent */
+  .voice-logo {
+    width: clamp(48px, 6vw, 72px);
+    height: clamp(48px, 6vw, 72px);
+    border-radius: 9999px;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.14),
+      0 1px 4px rgba(0, 0, 0, 0.10);
+    filter: contrast(1.08) saturate(1.1);
+    transition: transform 0.25s var(--ease-spring), box-shadow 0.25s ease;
+  }
+
+  .voice-logo:hover {
+    transform: scale(1.08);
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.16),
+      0 2px 8px rgba(0, 0, 0, 0.10);
+  }
+
+  /* Metric card glow effect */
+  .metric-card {
+    @apply relative overflow-hidden;
+  }
+
+  .metric-card::before {
+    content: "";
+    @apply absolute -top-1/2 -left-1/2 w-full h-full opacity-0 transition-opacity duration-300;
+    background: radial-gradient(circle, hsl(142 72% 42% / 0.08) 0%, transparent 70%);
+  }
+
+  .metric-card:hover::before {
+    @apply opacity-100;
+  }
+
+  /* Subtle pulse for live indicators */
+  .pulse-live {
+    animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+
+  /* Status dot animation */
+  .status-dot {
+    @apply relative;
+  }
+
+  .status-dot::after {
+    content: "";
+    @apply absolute inset-0 rounded-full animate-ping;
+  }
+
+  .status-dot.active::after {
+    background: hsl(142 72% 42% / 0.5);
+  }
+
+  /* Active Assistant card — continuous yellow edge glow */
+  .active-assistant-glow {
+    @apply relative overflow-hidden;
+  }
+
+  .active-assistant-glow::before,
+  .active-assistant-glow::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 50%;
+    height: 5px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--accent-yellow) / 0.95),
+      transparent
+    );
+    box-shadow: 0 0 12px hsl(var(--accent-yellow) / 0.45);
+    opacity: 0.9;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(200%, 0, 0);
+  }
+
+  .active-assistant-glow::before {
+    top: 0;
+    animation: active-assistant-glow-top 2.8s linear infinite;
+  }
+
+  .active-assistant-glow::after {
+    bottom: 0;
+    animation: active-assistant-glow-bottom 2.8s linear infinite;
+  }
+
+  @keyframes active-assistant-glow-top {
+    0% {
+      transform: translate3d(200%, 0, 0);
+    }
+    100% {
+      transform: translate3d(-200%, 0, 0);
+    }
+  }
+
+  @keyframes active-assistant-glow-bottom {
+    0% {
+      transform: translate3d(-200%, 0, 0);
+    }
+    100% {
+      transform: translate3d(200%, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .active-assistant-glow::before,
+    .active-assistant-glow::after {
+      animation: none;
+      opacity: 0.35;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  /* Skeleton loader */
+  .skeleton {
+    @apply relative overflow-hidden bg-muted;
+  }
+
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(142 72% 42% / 0.04),
+      transparent
+    );
+    animation: skeleton-shimmer 1.5s infinite;
+  }
+
+  @keyframes skeleton-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(142 18% 18%);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(142 72% 42% / 0.6);
+  }
+}
+
+/*
+  ── PAYG SHELL SCOPE ────────────────────────────────────────────────────
+  Applied to the root div of PaygLayout via the `.payg-shell` class.
+  Overrides sidebar + topbar tokens to pure #008613 green with white text
+  and #FFEA00 yellow hover. Content area uses white background, black text.
+*/
+.payg-shell {
+  /* Sidebar: solid brand green */
+  --sidebar-background:          142 100% 26%;   /* #008613                  */
+  --sidebar-foreground:            0   0% 100%;  /* white text               */
+  --sidebar-border:              142  80% 20%;   /* slightly darker green    */
+  --sidebar-accent:              142  80% 20%;   /* hover bg on nav items    */
+  --sidebar-accent-foreground:    55 100% 50%;   /* #FFEA00 yellow hover     */
+  --sidebar-primary:              55 100% 50%;   /* active indicator yellow  */
+  --sidebar-primary-foreground:  142 100% 26%;   /* green text on yellow     */
+  --sidebar-ring:                 55 100% 50%;
+
+  /* Override primary so buttons in the content area use green + yellow */
+  --primary:                     142 100% 26%;   /* #008613                  */
+  --primary-foreground:           55 100% 50%;   /* #FFEA00 text on buttons  */
+}
+
+/* TopBar green override */
+.payg-topbar {
+  background-color: hsl(var(--sidebar-background) / 0.72);
+  border-bottom-color: hsl(var(--sidebar-border) / 0.55);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+
+/* Content area: white bg, black text — override all dark-theme surface colors */
+.payg-content {
+  background-color: #ffffff;
+  color: #000000;
+
+  /* Override dark-theme CSS vars so cards/inputs/borders go light */
+  --background:     0 0% 100%;
+  --foreground:     0 0% 4%;
+  --card:           0 0% 98%;
+  --card-foreground: 0 0% 4%;
+  --popover:        0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --muted:          0 0% 94%;
+  --muted-foreground: 0 0% 35%;
+  --border:         0 0% 88%;
+  --input:          0 0% 88%;
+  --ring:           0 0% 4%;
+}
+
+
+
+/*
+  ── COMMAND CENTER SHELL SCOPE ──────────────────────────────────────────
+  Applied to the root div of AppLayout via the `.cc-shell` class.
+  Overrides sidebar + topbar tokens to #0a2a0a dark green with white text
+  and #ffea00 yellow hover. Content area uses white background, black text.
+*/
+.cc-shell {
+  --color-command-primary: #214226;
+
+  /* Sidebar: canonical Command Center brand dark (#214226) */
+  --sidebar-background:           129 33% 19%;
+  --sidebar-foreground:             0  0% 100%;
+  --sidebar-border:               129 22% 24%;
+  --sidebar-accent:               129 22% 27%;
+  --sidebar-accent-foreground:      0  0% 100%;
+  --sidebar-primary:              129 22% 27%;
+  --sidebar-primary-foreground:     0  0% 100%;
+  --sidebar-ring:                   0  0% 100%;
+
+  /* Primary actions in Command Center also use the brand dark */
+  --primary:                      129 33% 19%;
+  --primary-foreground:             0  0% 100%;
+}
+
+/* TopBar dark green override */
+.cc-topbar {
+  background-color: hsl(var(--sidebar-background)) !important;
+  border-bottom-color: hsl(var(--sidebar-border) / 0.55) !important;
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+
+/* Content area: white bg, black text — override all dark-theme surface colors */
+.cc-content {
+  background-color: #ffffff;
+  color: #214226;
+
+  /* Override dark-theme CSS vars so cards/inputs/borders go light */
+  --background:     0 0% 100%;      /* white */
+  --foreground:     129 33% 19%;
+  --card:           0 0% 98%;       /* off-white cards */
+  --card-foreground: 129 33% 19%;
+  --popover:        0 0% 100%;
+  --popover-foreground: 129 33% 19%;
+  --muted:          0 0% 94%;
+  --muted-foreground: 0 0% 35%;
+  --border:         0 0% 88%;
+  --input:          0 0% 88%;
+  --ring:           129 33% 19%;
+
+  /* Ensure CTAs in the light Command Center surface still use the brand dark */
+  --primary:        129 33% 19%;
+  --primary-foreground: 0 0% 100%;
+}
+
+
+
+@layer utilities {
+  /* Fluid editorial type utilities */
+  .text-display { font-size: var(--text-display); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); }
+  .text-h1 { font-size: var(--text-h1); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); }
+  .text-h2 { font-size: var(--text-h2); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); }
+  .text-h3 { font-size: var(--text-h3); line-height: var(--leading-tight); }
+  .text-caption { font-size: var(--text-caption); line-height: var(--leading-normal); }
+  .label-caps { letter-spacing: var(--tracking-wide); text-transform: uppercase; font-size: var(--text-caption); }
+
+  /* Rhythm helpers */
+  .space-macro { padding-top: var(--space-macro); padding-bottom: var(--space-macro); }
+
+  /* Glass surfaces (restricted use: nav/overlays/popovers) */
+  .glass {
+    backdrop-filter: blur(20px) saturate(1.4);
+    background: hsl(var(--surface-2) / 0.60);
+    border: 1px solid hsl(var(--border) / 0.08);
+    box-shadow: var(--shadow-elevated), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* Organic shadow system */
+  .shadow-ambient { box-shadow: var(--shadow-ambient); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .shadow-floating { box-shadow: var(--shadow-floating); }
+
+  /* Scroll reveals (IntersectionObserver toggles data-revealed) */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(16px);
+    will-change: opacity, transform;
+  }
+  [data-reveal][data-revealed="true"] {
+    animation: fadeUp 700ms var(--ease-out-expo) both;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-reveal] { opacity: 1; transform: none; }
+    [data-reveal][data-revealed="true"] { animation: none; }
+    .glass { backdrop-filter: none; }
+  }
+
+  /* Text gradients (palette-safe: uses existing vars only) */
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.95), hsl(var(--accent) / 0.95));
+  }
+
+  /* Surface utilities */
+  .surface-1 { background-color: hsl(var(--surface-1)); }
+  .surface-2 { background-color: hsl(var(--surface-2)); }
+  .surface-3 { background-color: hsl(var(--surface-3)); }
+
+  /* Border glow */
+  .border-glow {
+    box-shadow: 0 0 0 1px hsl(142 72% 42% / 0.25),
+                0 0 20px -5px hsl(142 72% 42% / 0.3);
+  }
+
+  /* Yellow accent glow */
+  .border-glow-yellow {
+    box-shadow: 0 0 0 1px hsl(56 100% 50% / 0.3),
+                0 0 16px -4px hsl(56 100% 50% / 0.25);
+  }
+
+  /* Subtle shadow */
+  .shadow-soft {
+    box-shadow: var(--shadow-ambient);
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background;
+  }
+}
+
+
