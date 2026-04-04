@@ -25,6 +25,7 @@ import { usePublicVoices, type VoiceEntry } from "@/hooks/use-voice-queries";
 import { api, getWsUrl, paygApi } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { callSession } from "@/lib/callSession";
+import { getErrorMessage } from "@/lib/errors";
 import { WsSignalHud } from "@/components/WsSignalHud";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -38,9 +39,9 @@ type AgentDetail = {
 };
 
 type WsEvent = {
-  ts: string;
+  ts: number;
   type: string;
-  payload: any;
+  payload?: unknown;
 };
 
 type DebugEventPayload = {
@@ -51,8 +52,8 @@ type DebugEventPayload = {
   ts_iso?: string;
   t_ms?: number;
   latencies_ms?: Record<string, number>;
-  meta?: any;
-  extra?: any;
+  meta?: unknown;
+  extra?: unknown;
 };
 
 type ChatTurn = {
@@ -69,6 +70,17 @@ type BgNoiseManifest = {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getAudioContextCtor(): typeof AudioContext {
+  const w = window as unknown as { webkitAudioContext?: typeof AudioContext };
+  const Ctor = window.AudioContext ?? w.webkitAudioContext;
+  if (!Ctor) throw new Error("AudioContext is not supported in this browser");
+  return Ctor;
 }
 
 export default function AssistantConfig() {
@@ -141,8 +153,8 @@ export default function AssistantConfig() {
       setEditingName(false);
       queryClient.invalidateQueries({ queryKey: assistantsWithStatsQueryKey });
       toast({ title: "Renamed", description: `Assistant renamed to "${trimmed}"` });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Rename failed", description: e?.message ?? "Failed to rename" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Rename failed", description: getErrorMessage(e, "Failed to rename") });
     } finally {
       setSavingName(false);
     }
@@ -184,7 +196,7 @@ export default function AssistantConfig() {
 
   // Call flow status for modal
   const [callFlowStatus, setCallFlowStatus] = useState<
-    "idle" | "warming" | "ready" | "ending" | "cleanup"
+    "idle" | "warming" | "ready" | "calling" | "ending" | "cleanup"
   >("idle");
 
   // Keep calling independent of routing: rehydrate from the singleton session.
@@ -192,20 +204,20 @@ export default function AssistantConfig() {
   useEffect(() => {
     const syncFromGlobal = () => {
       const snap = callSession.snapshot();
-      setWsStatus(snap.wsStatus as any);
-      setMicStatus(snap.micStatus as any);
-      setSpeakerStatus(snap.speakerStatus as any);
-      setCallFlowStatus(snap.callFlowStatus as any);
-      setCurrentCustomer(snap.currentCustomer as any);
-      setPartialUserText(snap.partialUserText as any);
+      setWsStatus(snap.wsStatus);
+      setMicStatus(snap.micStatus);
+      setSpeakerStatus(snap.speakerStatus);
+      setCallFlowStatus(snap.callFlowStatus);
+      setCurrentCustomer(snap.currentCustomer);
+      setPartialUserText(snap.partialUserText);
       // Mirror global state so navigation doesn't wipe the UI.
-      setEvents((snap.events as any) ?? []);
+      setEvents(snap.events);
       setChat(
-        ((snap.chat as any) ?? []).map((t: any) => ({
-          id: String(t.id),
-          ts: new Date(typeof t.ts === "number" ? t.ts : Date.now()).toISOString(),
-          speaker: t.speaker === "agent" ? "agent" : "user",
-          text: String(t.text ?? ""),
+        snap.chat.map((t) => ({
+          id: t.id,
+          ts: new Date(t.ts).toISOString(),
+          speaker: t.speaker,
+          text: t.text,
         }))
       );
     };
@@ -338,10 +350,10 @@ export default function AssistantConfig() {
     setEvents((prev) => [...batch.reverse(), ...prev].slice(0, 250));
   }
 
-  function pushEvent(type: string, payload: any) {
+  function pushEvent(type: string, payload?: unknown) {
     if (!DEBUG_LOG_ENABLED) return;
     // Keep it simple: when debug is on, log everything we explicitly push.
-    eventBufferRef.current.push({ ts: nowIso(), type, payload });
+    eventBufferRef.current.push({ ts: Date.now(), type, payload });
 
     if (eventFlushTimerRef.current === null) {
       eventFlushTimerRef.current = window.setTimeout(() => {
@@ -356,7 +368,7 @@ export default function AssistantConfig() {
       string,
       {
         turnId: string;
-        events: Array<{ stage: string; tsIso?: string; tMs?: number; lat?: Record<string, number>; raw: any }>;
+        events: Array<{ stage: string; tsIso?: string; tMs?: number; lat?: Record<string, number>; raw: DebugEventPayload }>;
       }
     >();
 
@@ -492,7 +504,8 @@ export default function AssistantConfig() {
 
   async function ensurePlaybackContext(sampleRate: number, opts?: { startBgNoise?: boolean }) {
     if (playbackContextRef.current) return playbackContextRef.current;
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
+    const AudioContextCtor = getAudioContextCtor();
+    const ctx = new AudioContextCtor({ sampleRate });
     playbackContextRef.current = ctx;
     playbackChainRef.current = { nextTime: ctx.currentTime };
     setSpeakerStatus("primed");
@@ -554,9 +567,18 @@ export default function AssistantConfig() {
     const arr = await res.arrayBuffer();
     // decodeAudioData is callback-based in some browsers; wrap it.
     const buf: AudioBuffer = await new Promise((resolve, reject) => {
-      const anyCtx: any = ctx as any;
-      const p = anyCtx.decodeAudioData(arr, resolve, reject);
-      if (p && typeof p.then === "function") (p as Promise<AudioBuffer>).then(resolve).catch(reject);
+      const legacyDecode = ctx.decodeAudioData as unknown as (
+        audioData: ArrayBuffer,
+        successCallback: (decodedData: AudioBuffer) => void,
+        errorCallback: (err: unknown) => void,
+      ) => unknown;
+
+      const maybePromise = legacyDecode(arr, resolve, reject);
+      if (isRecord(maybePromise) && typeof maybePromise.then === "function") {
+        (maybePromise as {
+          then: (onFulfilled: (value: AudioBuffer) => void, onRejected: (reason: unknown) => void) => unknown;
+        }).then(resolve, reject);
+      }
     });
     return buf;
   }
@@ -634,9 +656,9 @@ export default function AssistantConfig() {
       await el.play();
       setPreviewPlaying(true);
       pushEvent("bg_noise_preview_started", { url, volume: bgNoiseVolume });
-    } catch (e: any) {
+    } catch (e) {
       stopPreview("preview_error");
-      toast({ variant: "destructive", title: "Preview failed", description: e?.message ?? "Unable to play preview" });
+      toast({ variant: "destructive", title: "Preview failed", description: getErrorMessage(e, "Unable to play preview") });
     }
   }
 
@@ -697,9 +719,9 @@ export default function AssistantConfig() {
       notifyWorkletAiState(false);  // Tell worklet AI stopped speaking
       setSpeakerStatus("stopped");
       pushEvent("speaker_stopped", { reason });
-    } catch (e: any) {
+    } catch (e) {
       setSpeakerStatus("error");
-      pushEvent("speaker_stop_error", { message: e?.message ?? String(e), reason });
+      pushEvent("speaker_stop_error", { message: getErrorMessage(e), reason });
     }
   }
 
@@ -761,7 +783,7 @@ export default function AssistantConfig() {
       const pcm16 = new Int16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
       const float32 = pcm16ToFloat32(pcm16);
       const buffer = ctx.createBuffer(1, float32.length, sampleRate);
-      buffer.copyToChannel(float32, 0);
+      buffer.getChannelData(0).set(float32);
 
       const src = ctx.createBufferSource();
       src.buffer = buffer;
@@ -788,9 +810,9 @@ export default function AssistantConfig() {
 
       const duration = float32.length / sampleRate;
       if (chain) chain.nextTime = startAt + duration;
-    } catch (e: any) {
+    } catch (e) {
       setSpeakerStatus("error");
-      pushEvent("speaker_play_error", { message: e?.message ?? String(e) });
+      pushEvent("speaker_play_error", { message: getErrorMessage(e) });
     }
   }
 
@@ -826,14 +848,14 @@ export default function AssistantConfig() {
         script_text: a.script_text ?? undefined,
         speaker_id: a.speaker_id ?? null,
         intro_message: a.intro_message ?? null,
-        linked_dialing_file_id: (a as any)?.linked_dialing_file_id ?? null,
+        linked_dialing_file_id: a.linked_dialing_file_id ?? null,
       });
       setScriptText(a.script_text ?? "");
       setSelectedVoice(a.speaker_id ?? null);
       setIntroMessage(a.intro_message ?? "");
-      setLinkedDialingFileId(((a as any)?.linked_dialing_file_id ?? null) as any);
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to load agent";
+      setLinkedDialingFileId(a.linked_dialing_file_id ?? null);
+    } catch (e) {
+      const msg = getErrorMessage(e, "Failed to load agent");
       setError(msg);
       toast({ variant: "destructive", title: "Agent", description: msg });
     } finally {
@@ -851,8 +873,8 @@ export default function AssistantConfig() {
         row_count: Number(f.row_count ?? 0),
       }));
       setDialingFiles(files);
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Dialing Data", description: e?.message ?? "Failed to load files" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Dialing Data", description: getErrorMessage(e, "Failed to load files") });
     } finally {
       setDialingFilesLoading(false);
     }
@@ -866,8 +888,8 @@ export default function AssistantConfig() {
       const next = res.assistant;
       setAgent((prev) => (prev ? { ...prev, linked_dialing_file_id: next.linked_dialing_file_id } : prev));
       toast({ title: "Saved", description: "Dialing file link updated." });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Save failed", description: e?.message ?? "Failed to update link" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Save failed", description: getErrorMessage(e, "Failed to update link") });
     } finally {
       setSavingDialingLink(false);
     }
@@ -918,9 +940,8 @@ export default function AssistantConfig() {
       });
       setScriptText(a.script_text ?? "");
       toast({ title: "Saved", description: "Script updated" });
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to save";
-      toast({ variant: "destructive", title: "Save failed", description: msg });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Save failed", description: getErrorMessage(e, "Failed to save") });
     } finally {
       setSaving(false);
     }
@@ -973,9 +994,8 @@ export default function AssistantConfig() {
           })
           .finally(() => setWarmingUpVoice(false));
       }
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to save voice";
-      toast({ variant: "destructive", title: "Voice save failed", description: msg });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Voice save failed", description: getErrorMessage(e, "Failed to save voice") });
     } finally {
       setSavingVoice(false);
     }
@@ -1008,9 +1028,8 @@ export default function AssistantConfig() {
       setAgent((prev) => prev ? { ...prev, intro_message: res.intro_message } : prev);
       setIntroMessage(res.intro_message);
       toast({ title: "Intro saved", description: "First Intro Message updated." });
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to save intro message";
-      toast({ variant: "destructive", title: "Save failed", description: msg });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Save failed", description: getErrorMessage(e, "Failed to save intro message") });
     } finally {
       setSavingIntro(false);
     }
@@ -1067,10 +1086,10 @@ export default function AssistantConfig() {
         if (!bgNoiseLocked && (!bgNoiseUrl || !opts.some((o) => o.url === bgNoiseUrl))) {
           setBgNoiseUrl(opts[0]?.url ?? "");
         }
-      } catch (e: any) {
+      } catch (e) {
         if (cancelled) return;
         setBgNoiseOptions([]);
-        setBgNoiseManifestError(e?.message ?? "Failed to load background sounds");
+        setBgNoiseManifestError(getErrorMessage(e, "Failed to load background sounds"));
       }
     })();
     return () => {
@@ -1235,10 +1254,10 @@ export default function AssistantConfig() {
       micStatusRef.current = "idle";
       setMicStatus("stopped");
       pushEvent("mic_stopped", {});
-    } catch (e: any) {
+    } catch (e) {
       micStatusRef.current = "idle";
       setMicStatus("error");
-      pushEvent("mic_stop_error", { message: e?.message ?? String(e) });
+      pushEvent("mic_stop_error", { message: getErrorMessage(e) });
     }
   }
 
@@ -1298,9 +1317,8 @@ export default function AssistantConfig() {
     const media = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStreamRef.current = media;
 
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({
-      sampleRate: 48000,
-    });
+    const AudioContextCtor = getAudioContextCtor();
+    const ctx = new AudioContextCtor({ sampleRate: 48000 });
     audioContextRef.current = ctx;
 
     const source = ctx.createMediaStreamSource(media);
@@ -1308,7 +1326,7 @@ export default function AssistantConfig() {
 
     // Prefer AudioWorkletNode (runs audio processing off the main thread).
     // Fallback to ScriptProcessorNode only if worklets aren't available.
-    const canUseWorklet = !!(ctx.audioWorklet && (window as any).AudioWorkletNode);
+    const canUseWorklet = !!(ctx.audioWorklet && "AudioWorkletNode" in window);
     if (canUseWorklet) {
       try {
         // The worklet module lives in /public so it can be loaded by URL.
@@ -1319,9 +1337,9 @@ export default function AssistantConfig() {
 
         node.port.onmessage = (event: MessageEvent) => {
           try {
-            const msg = (event as any).data;
-            if (msg?.type === "audioData" && msg?.data) {
-              const pcm16buf = msg.data as ArrayBuffer;
+            const msg = event.data as unknown;
+            if (isRecord(msg) && msg.type === "audioData" && msg.data instanceof ArrayBuffer) {
+              const pcm16buf = msg.data;
               const u8 = new Uint8Array(pcm16buf);
               const b64 = bytesToBase64(u8);
               ws.send(JSON.stringify({ type: "audio_stream_realtime", data: b64 }));
@@ -1329,7 +1347,7 @@ export default function AssistantConfig() {
             }
 
             // VAD-based interruption: worklet detected user speech while AI is speaking
-            if (msg?.type === "userInterrupt") {
+            if (isRecord(msg) && msg.type === "userInterrupt") {
               // We still execute the interrupt, but we don't need to spam the UI log.
               pushEvent("interrupt_detected_by_vad", msg.data);
               sendInterrupt();
@@ -1337,26 +1355,26 @@ export default function AssistantConfig() {
             }
 
             // Optional: surface VAD results in debug log (can be noisy; keep as event)
-            if (msg?.type === "vadResult") {
+            if (isRecord(msg) && msg.type === "vadResult") {
               // Keep hook, but filtered out of UI by DEBUG_LOG_DROP_TYPES.
               pushEvent("vad", msg.data);
               return;
             }
-          } catch (e: any) {
+          } catch (e) {
             setMicStatus("error");
             // Still surface errors for operator reliability.
             console.warn("mic_stream_error", e);
-            pushEvent("mic_stream_error", { message: e?.message ?? String(e) });
+            pushEvent("mic_stream_error", { message: getErrorMessage(e) });
           }
         };
 
         source.connect(node);
         // Some browsers require the node to be connected to destination to keep processing alive.
         node.connect(ctx.destination);
-      } catch (e: any) {
+      } catch (e) {
         // Worklet failed to init; fall back to ScriptProcessorNode.
         console.warn("mic_worklet_fallback", e);
-        pushEvent("mic_worklet_fallback", { message: e?.message ?? String(e) });
+        pushEvent("mic_worklet_fallback", { message: getErrorMessage(e) });
         const processor = ctx.createScriptProcessor(4096, 1, 1);
         processorRef.current = processor;
         processor.onaudioprocess = (event) => {
@@ -1377,10 +1395,10 @@ export default function AssistantConfig() {
             const u8 = new Uint8Array(pcm16.buffer);
             const b64 = bytesToBase64(u8);
             ws.send(JSON.stringify({ type: "audio_stream_realtime", data: b64 }));
-          } catch (err: any) {
+          } catch (err) {
             setMicStatus("error");
             console.warn("mic_stream_error", err);
-            pushEvent("mic_stream_error", { message: err?.message ?? String(err) });
+            pushEvent("mic_stream_error", { message: getErrorMessage(err) });
           }
         };
         source.connect(processor);
@@ -1408,10 +1426,10 @@ export default function AssistantConfig() {
           const u8 = new Uint8Array(pcm16.buffer);
           const b64 = bytesToBase64(u8);
           ws.send(JSON.stringify({ type: "audio_stream_realtime", data: b64 }));
-        } catch (e: any) {
+        } catch (e) {
           setMicStatus("error");
           console.warn("mic_stream_error", e);
-          pushEvent("mic_stream_error", { message: e?.message ?? String(e) });
+          pushEvent("mic_stream_error", { message: getErrorMessage(e) });
         }
       };
       source.connect(processor);
@@ -1420,7 +1438,7 @@ export default function AssistantConfig() {
     micStatusRef.current = "streaming";
     setMicStatus("streaming");
     pushEvent("mic_streaming", { sampleRate: ctx.sampleRate });
-    } catch (e: any) {
+    } catch (e) {
       // Reset micStatusRef so the mic can be started again after an error.
       micStatusRef.current = "idle";
       throw e;
@@ -1521,9 +1539,12 @@ export default function AssistantConfig() {
           bg_noise_volume: bgNoiseVolume,
           bg_noise_url: bgNoiseUrl,
         });
-      } catch (e: any) {
-        const msg = e?.message ?? "Failed to save background noise settings";
-        toast({ variant: "destructive", title: "Start call blocked", description: msg });
+      } catch (e) {
+        toast({
+          variant: "destructive",
+          title: "Start call blocked",
+          description: getErrorMessage(e, "Failed to save background noise settings"),
+        });
         return;
       }
     }
@@ -1564,9 +1585,9 @@ export default function AssistantConfig() {
         (openWs) => {
           openWs.send(JSON.stringify({ type: "start_call" }));
           pushEvent("ws_send", { type: "start_call" });
-          startMicStreaming().catch((e: any) => {
+          startMicStreaming().catch((e) => {
             setMicStatus("error");
-            pushEvent("mic_error", { message: e?.message ?? String(e) });
+            pushEvent("mic_error", { message: getErrorMessage(e) });
           });
         },
       );
@@ -1780,8 +1801,8 @@ export default function AssistantConfig() {
                     return current;
                   });
                 }, 1000);
-              } catch (e: any) {
-                pushEvent("endcall_local_cleanup_error", { message: e?.message ?? String(e) });
+              } catch (e) {
+                pushEvent("endcall_local_cleanup_error", { message: getErrorMessage(e) });
                 setCallFlowStatus("idle");
               }
             })();
@@ -1827,9 +1848,8 @@ export default function AssistantConfig() {
         }
       };
 
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to start calling";
-      toast({ variant: "destructive", title: "Start calling", description: msg });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Start calling", description: getErrorMessage(e, "Failed to start calling") });
     } finally {
       setCallStarting(false);
     }

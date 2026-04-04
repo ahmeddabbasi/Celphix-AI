@@ -62,7 +62,11 @@ export default function PaygVoices() {
   function toggleAccent(accent: VoiceAccent) {
     setAccentFilters((prev) => {
       const next = new Set(prev);
-      next.has(accent) ? next.delete(accent) : next.add(accent);
+      if (next.has(accent)) {
+        next.delete(accent);
+      } else {
+        next.add(accent);
+      }
       return next;
     });
   }
@@ -70,7 +74,11 @@ export default function PaygVoices() {
   function toggleGender(gender: VoiceGender) {
     setGenderFilters((prev) => {
       const next = new Set(prev);
-      next.has(gender) ? next.delete(gender) : next.add(gender);
+      if (next.has(gender)) {
+        next.delete(gender);
+      } else {
+        next.add(gender);
+      }
       return next;
     });
   }

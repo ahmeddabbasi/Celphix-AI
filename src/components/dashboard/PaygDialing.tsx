@@ -4,6 +4,7 @@ import { PhoneCall, Users, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 import { paygApi as api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +15,13 @@ type AssistantWithStats = {
   display_name: string;
   linked_number: string | null;
   linked_number_label: string | null;
+};
+
+type AssistantsWithStatsApiRow = {
+  assistant_id: number;
+  display_name?: string | null;
+  linked_number?: string | null;
+  linked_number_label?: string | null;
 };
 
 type TwilioNumberRow = {
@@ -61,7 +69,7 @@ export function PaygDialing() {
   });
 
   const assistants: AssistantWithStats[] = useMemo(() => {
-    const raw = (assistantsQ.data?.assistants ?? []) as any[];
+    const raw = (assistantsQ.data?.assistants ?? []) as AssistantsWithStatsApiRow[];
     return raw.map((a) => ({
       assistant_id: a.assistant_id,
       display_name: a.display_name ?? "",
@@ -148,8 +156,8 @@ export function PaygDialing() {
         await startDialerForAssistant(assistantId);
         toast.success("Started dialing.");
       }
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to start dialing.");
+    } catch (e) {
+      toast.error(getErrorMessage(e, "Failed to start dialing."));
     } finally {
       setDialingOne(false);
     }

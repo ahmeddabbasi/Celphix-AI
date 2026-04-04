@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useDashboardCalls } from "@/hooks/use-dashboard-queries";
 import { cn } from "@/lib/utils";
 import type { DashboardWindow } from "@/hooks/use-dashboard-queries";
+import { getErrorMessage } from "@/lib/errors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,7 +159,7 @@ async function exportToPdf(
     },
     margin: { left: 14, right: 14 },
     didDrawPage: (data) => {
-      const pageCount = (doc as any).internal.getNumberOfPages();
+      const pageCount = doc.getNumberOfPages();
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
       doc.text(
@@ -220,19 +221,21 @@ export default function Calls() {
   const loadingInitial = callsQ.isPending;
   const isRefreshing = callsQ.isFetching && !callsQ.isPending;
 
-  const rawRows = (callsQ.data?.calls ?? []) as CallRow[];
-
   const [visibleRows, setVisibleRows] = useState<CallRow[]>([]);
   useEffect(() => {
-    if (rawRows.length > 0) setVisibleRows(rawRows);
-  }, [rawRows]);
+    const rows = (callsQ.data?.calls ?? []) as CallRow[];
+    if (rows.length > 0) setVisibleRows(rows);
+  }, [callsQ.data]);
 
   const lastErrRef = useRef<unknown>(null);
   useEffect(() => {
     if (!callsQ.error || callsQ.error === lastErrRef.current) return;
     lastErrRef.current = callsQ.error;
-    const e = callsQ.error as any;
-    toast({ variant: "destructive", title: "Call Logs", description: e?.message ?? "Failed to load calls" });
+    toast({
+      variant: "destructive",
+      title: "Call Logs",
+      description: getErrorMessage(callsQ.error, "Failed to load calls"),
+    });
   }, [callsQ.error, toast]);
 
   const [dayKey, setDayKey] = useState(() => new Date().toISOString().slice(0, 10));
@@ -278,8 +281,12 @@ export default function Calls() {
     try {
       await exportToPdf(filteredCalls, windowLabel);
       toast({ title: "Export complete", description: `${filteredCalls.length} record(s) saved as PDF.` });
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Export failed", description: err?.message ?? "Unknown error" });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: getErrorMessage(err, "Unknown error"),
+      });
     } finally {
       setExporting(false);
     }

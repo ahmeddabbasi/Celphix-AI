@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 let audio: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
 let playing = false;
-let listeners = new Set<() => void>();
+const listeners = new Set<() => void>();
 
 function getAudio(): HTMLAudioElement {
   if (!audio) {

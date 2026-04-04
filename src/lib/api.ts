@@ -15,6 +15,10 @@ import { authenticatedFetch } from "@/lib/auth";
 const DEFAULT_API_URL = "";
 const DEFAULT_WS_URL = "";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function joinUrl(base: string, path: string) {
   if (!base) return path.startsWith("/") ? path : `/${path}`;
   const a = base.replace(/\/+$/, "");
@@ -66,20 +70,22 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
     try {
-      const data = await res.json();
-      const detail = (data as any)?.detail;
-      const msg = (data as any)?.message;
+      const data = (await res.json()) as unknown;
+      const detail = isRecord(data) ? data.detail : undefined;
+      const msg = isRecord(data) ? data.message : undefined;
 
       // FastAPI validation errors commonly return:
       // { detail: [{ loc: [...], msg: "...", type: "..." }, ...] }
       if (Array.isArray(detail)) {
         const parts = detail
-          .map((e: any) => {
-            const loc = Array.isArray(e?.loc) ? e.loc.join(".") : "";
-            const m = typeof e?.msg === "string" ? e.msg : "Invalid request";
-            return loc ? `${loc}: ${m}` : m;
+          .map((entry) => {
+            if (!isRecord(entry)) return null;
+            const loc = entry.loc;
+            const locText = Array.isArray(loc) ? loc.map(String).join(".") : "";
+            const m = typeof entry.msg === "string" ? entry.msg : "Invalid request";
+            return locText ? `${locText}: ${m}` : m;
           })
-          .filter(Boolean);
+          .filter((p): p is string => typeof p === "string" && p.length > 0);
         message = parts.length ? parts.join(" | ") : message;
       } else if (typeof detail === "string") {
         message = detail;
@@ -470,7 +476,7 @@ export const api = {
   delete: <T>(path: string) => request<T>("DELETE", path),
 
   // Dashboard helper (used by src/pages/Dashboard.tsx)
-  getMetrics: () => request<any>("GET", "/metrics"),
+  getMetrics: () => request<unknown>("GET", "/metrics"),
 
   // ---- DB-backed dashboard endpoints ----
   dashboard: makeDashboardApi(CC_PREFIX),
@@ -495,7 +501,7 @@ export const api = {
           callsummary: string | null;
           notes: string | null;
           call_transfer?: string | null;
-          data?: Record<string, any> | null;
+          data?: Record<string, unknown> | null;
           created_at?: string | null;
           updated_at?: string | null;
         }>;
@@ -514,7 +520,7 @@ export const api = {
       callsummary?: string | null;
       notes?: string | null;
     }) =>
-      request<{ lead: any }>("POST", "/api/cc/crm/leads", payload),
+      request<{ lead: unknown }>("POST", "/api/cc/crm/leads", payload),
 
     patchLead: (
       leadId: number,
@@ -528,7 +534,7 @@ export const api = {
         callsummary?: string | null;
         notes?: string | null;
       },
-    ) => request<{ lead: any }>("PATCH", `/api/cc/crm/leads/${leadId}`, patch),
+    ) => request<{ lead: unknown }>("PATCH", `/api/cc/crm/leads/${leadId}`, patch),
 
     deleteLead: (leadId: number) => request<{ ok: boolean }>("DELETE", `/api/cc/crm/leads/${leadId}`),
 
@@ -568,10 +574,10 @@ export const api = {
   dialingData: makeDialingDataApi(CC_PREFIX),
 
   preferences: {
-    get: () => request<{ preferences: Record<string, any> }>("GET", "/preferences"),
+    get: () => request<{ preferences: Record<string, unknown> }>("GET", "/preferences"),
     
-    update: (preferences: Record<string, any>) =>
-      request<{ preferences: Record<string, any> }>("POST", "/preferences", preferences),
+    update: (preferences: Record<string, unknown>) =>
+      request<{ preferences: Record<string, unknown> }>("POST", "/preferences", preferences),
   },
 
   users: {
@@ -598,6 +604,12 @@ export const api = {
         `/api/access-requests/${reqId}/review`,
         { action },
       ),
+  },
+
+  supportTickets: {
+    /** Submit a support ticket / complaint to admins. */
+    submit: (body: { interface_type: "cc" | "payg"; message: string }) =>
+      request<{ ok: boolean }>("POST", "/api/support-tickets", body),
   },
 
   notifications: {

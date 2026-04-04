@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { paygApi as api } from "@/lib/api";
 import { isAuthenticated } from "@/lib/auth";
 import { voices } from "@/data/voices";
+import { getErrorMessage } from "@/lib/errors";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,8 +96,8 @@ function AssistantCard({ a }: { a: PaygAssistant }) {
       queryClient.invalidateQueries({ queryKey: ["payg", "assistants"] });
       queryClient.invalidateQueries({ queryKey: ["payg", "dashboard", "assistants", "with-stats"] });
       queryClient.invalidateQueries({ queryKey: ["payg", "dashboard", "assistants-kpis"] });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to delete assistant.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to delete assistant."));
     } finally {
       setDeleting(false);
     }
@@ -242,8 +243,8 @@ function AddAssistantDialog({ disabled }: { disabled?: boolean }) {
       queryClient.invalidateQueries({ queryKey: ["payg", "assistants"] });
       queryClient.invalidateQueries({ queryKey: ["payg", "dashboard", "assistants", "with-stats"] });
       queryClient.invalidateQueries({ queryKey: ["payg", "dashboard", "assistants-kpis"] });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to create assistant.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to create assistant."));
     } finally {
       setSaving(false);
     }
@@ -342,7 +343,10 @@ export default function PaygAssistants() {
     refetchOnWindowFocus: true,
   });
 
-  const assistants: PaygAssistant[] = (data?.assistants ?? []) as PaygAssistant[];
+  const assistants: PaygAssistant[] = useMemo(
+    () => (data?.assistants ?? []) as PaygAssistant[],
+    [data?.assistants],
+  );
   const isRefreshing = isFetching && !isPending;
 
   const sorted = useMemo(() => {

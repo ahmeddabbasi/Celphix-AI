@@ -3,6 +3,7 @@ import { Plus, Trash2, Phone, PhoneCall, Link2, Unlink, AlertCircle } from "luci
 import { toast } from "sonner";
 
 import { api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -314,8 +315,8 @@ function AddNumberDialog({
       toast.success(`Number ${res.number.phone_number} added.`);
       setOpen(false);
       reset();
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to add number.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to add number."));
     } finally {
       setSaving(false);
     }
@@ -465,8 +466,8 @@ function StartCallDialog({ number, disabled }: { number: TwilioNumber; disabled?
       toast.success(`Call initiated to ${res.to}. SID: ${res.call_sid}`);
       setOpen(false);
       setToNumber("");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to start call.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to start call."));
     } finally {
       setCalling(false);
     }
@@ -627,8 +628,8 @@ function DialerToggleButton({
       } else {
         toast.success("Dialing started.");
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Dialer request failed.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Dialer request failed."));
     } finally {
       setBusy(false);
     }
@@ -702,8 +703,8 @@ export default function NumbersTwilio() {
         // Files are optional for this page; keep numbers usable if this fails.
         setFiles([]);
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to load Twilio numbers.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to load Twilio numbers."));
     } finally {
       setLoading(false);
     }
@@ -722,8 +723,8 @@ export default function NumbersTwilio() {
       } else {
         toast.success("Number removed.");
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to delete number.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to delete number."));
     }
   }
 
@@ -739,12 +740,12 @@ export default function NumbersTwilio() {
 
       if ((assistantId ?? null) !== (currentAssistantId ?? null)) {
         const res = await api.twilio.linkAssistant(numberId, assistantId);
-        updated = res.number as any;
+        updated = res.number;
       }
 
       if ((fileId ?? null) !== (currentFileId ?? null)) {
         const res = await api.twilio.linkDialingFile(numberId, fileId);
-        updated = res.number as any;
+        updated = res.number;
       }
 
       if (updated) {
@@ -752,8 +753,8 @@ export default function NumbersTwilio() {
       }
       toast.success("Saved.");
       return true;
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to save changes.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to save changes."));
       return false;
     } finally {
       setLinkingSaving(null);

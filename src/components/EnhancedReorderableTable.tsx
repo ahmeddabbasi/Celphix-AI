@@ -26,32 +26,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export interface ColumnConfig {
-  id: string;
+export interface ColumnConfig<Row extends object> {
+  id: Extract<keyof Row, string>;
   label: string;
   minWidth?: string;
-  render?: (row: any) => React.ReactNode;
+  render?: (row: Row) => React.ReactNode;
   editable?: boolean;
 }
 
-interface ReorderableTableProps {
-  columns: ColumnConfig[];
-  data: any[];
-  rowKey: string;
-  onColumnOrderChange?: (newColumns: ColumnConfig[]) => void;
+interface ReorderableTableProps<Row extends object> {
+  columns: Array<ColumnConfig<Row>>;
+  data: Row[];
+  rowKey: Extract<keyof Row, string>;
+  onColumnOrderChange?: (newColumns: Array<ColumnConfig<Row>>) => void;
   fixedColumns?: string[]; // Column IDs that cannot be reordered (e.g., checkbox)
   className?: string;
   emptyMessage?: string;
+}
+
+function toReactKey(value: unknown): React.Key {
+  if (typeof value === "string" || typeof value === "number") return value;
+  if (typeof value === "bigint") return value.toString();
+  return String(value);
 }
 
 /**
  * Sortable header component with scoped drag handle
  * CRITICAL: Drag handle is isolated to prevent text selection conflicts
  */
-const SortableHeader: React.FC<{
-  column: ColumnConfig;
+function SortableHeader<Row extends object>({
+  column,
+  isFixed,
+}: {
+  column: ColumnConfig<Row>;
   isFixed: boolean;
-}> = React.memo(({ column, isFixed }) => {
+}) {
   const {
     attributes,
     listeners,
@@ -96,69 +105,53 @@ const SortableHeader: React.FC<{
       </div>
     </TableHead>
   );
-});
-
-SortableHeader.displayName = "SortableHeader";
+}
 
 /**
  * Memoized row component to prevent unnecessary re-renders
  * CRITICAL: Custom comparison function ensures only changed rows re-render
  */
-const MemoizedTableRow: React.FC<{
-  row: any;
-  columns: ColumnConfig[];
-  rowKey: string;
-}> = React.memo(
-  ({ row, columns, rowKey }) => {
-    return (
-      <TableRow key={row[rowKey]}>
-        {columns.map((col) => (
-          <TableCell key={`${row[rowKey]}-${col.id}`} className={col.minWidth}>
-            {col.render ? col.render(row) : row[col.id]}
-          </TableCell>
-        ))}
-      </TableRow>
-    );
-  },
-  (prevProps, nextProps) => {
-    // Custom comparison: only re-render if data actually changed
+function MemoizedTableRowInner<Row extends object>(
+  props: { row: Row; columns: Array<ColumnConfig<Row>>; rowKey: Extract<keyof Row, string> },
+) {
+  const { row, columns, rowKey } = props;
+  const rowId = row[rowKey];
+  return (
+    <TableRow>
+      {columns.map((col) => (
+        <TableCell key={`${String(rowId)}-${col.id}`} className={col.minWidth}>
+          {col.render ? col.render(row) : ((row[col.id] as unknown) as React.ReactNode)}
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+}
+
+const MemoizedTableRow = React.memo(
+  MemoizedTableRowInner,
+  <Row extends object>(
+    prevProps: { row: Row; columns: Array<ColumnConfig<Row>>; rowKey: Extract<keyof Row, string> },
+    nextProps: { row: Row; columns: Array<ColumnConfig<Row>>; rowKey: Extract<keyof Row, string> },
+  ) => {
     const prevRow = prevProps.row;
     const nextRow = nextProps.row;
-    
-    if (prevRow[prevProps.rowKey] !== nextRow[nextProps.rowKey]) {
-      return false; // Different row ID, must re-render
-    }
-    
-    // CRITICAL: Check if column ORDER changed
-    if (prevProps.columns.length !== nextProps.columns.length) {
-      return false; // Column count changed, must re-render
-    }
-    
-    // Check if column IDs are in different order
-    for (let i = 0; i < prevProps.columns.length; i++) {
-      if (prevProps.columns[i].id !== nextProps.columns[i].id) {
-        return false; // Column order changed, must re-render
-      }
-    }
-    
-    // CRITICAL: Check if columns array reference changed
-    // This ensures editable fields re-render when state changes
-    if (prevProps.columns !== nextProps.columns) {
-      return false; // Column configuration changed, must re-render
-    }
-    
-    // Check if any column values changed
-    for (const col of prevProps.columns) {
-      if (prevRow[col.id] !== nextRow[col.id]) {
-        return false; // Value changed, must re-render
-      }
-    }
-    
-    return true; // No changes, skip re-render
-  }
-);
 
-MemoizedTableRow.displayName = "MemoizedTableRow";
+    if (prevRow[prevProps.rowKey] !== nextRow[nextProps.rowKey]) return false;
+
+    if (prevProps.columns.length !== nextProps.columns.length) return false;
+    for (let i = 0; i < prevProps.columns.length; i++) {
+      if (prevProps.columns[i].id !== nextProps.columns[i].id) return false;
+    }
+
+    if (prevProps.columns !== nextProps.columns) return false;
+
+    for (const col of prevProps.columns) {
+      if (prevRow[col.id] !== nextRow[col.id]) return false;
+    }
+
+    return true;
+  },
+) as typeof MemoizedTableRowInner;
 
 /**
  * ReorderableTable - High-performance table with column DnD
@@ -170,15 +163,16 @@ MemoizedTableRow.displayName = "MemoizedTableRow";
  * 4. Fixed columns (like checkbox) stay in place
  * 5. 8px activation distance prevents accidental drags
  */
-export const ReorderableTable: React.FC<ReorderableTableProps> = ({
-  columns,
-  data,
-  rowKey,
-  onColumnOrderChange,
-  fixedColumns = [],
-  className = "",
-  emptyMessage = "No data available",
-}) => {
+export function ReorderableTable<Row extends object>(props: ReorderableTableProps<Row>) {
+  const {
+    columns,
+    data,
+    rowKey,
+    onColumnOrderChange,
+    fixedColumns = [],
+    className = "",
+    emptyMessage = "No data available",
+  } = props;
   // Configure sensors with activation constraints to prevent conflicts
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -232,10 +226,7 @@ export const ReorderableTable: React.FC<ReorderableTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <SortableContext
-                items={columnIds}
-                strategy={horizontalListSortingStrategy}
-              >
+              <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                 {columns.map((col) => (
                   <SortableHeader
                     key={col.id}
@@ -259,7 +250,7 @@ export const ReorderableTable: React.FC<ReorderableTableProps> = ({
             ) : (
               data.map((row) => (
                 <MemoizedTableRow
-                  key={row[rowKey]}
+                  key={toReactKey(row[rowKey])}
                   row={row}
                   columns={columns}
                   rowKey={rowKey}
@@ -271,6 +262,4 @@ export const ReorderableTable: React.FC<ReorderableTableProps> = ({
       </div>
     </DndContext>
   );
-};
-
-ReorderableTable.displayName = "ReorderableTable";
+}

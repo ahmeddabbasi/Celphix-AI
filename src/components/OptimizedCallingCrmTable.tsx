@@ -7,7 +7,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { ReorderableTable, ColumnConfig } from "@/components/EnhancedReorderableTable";
 import { useColumnOrder } from "@/hooks/use-preferences";
-import { useUpdateCallingCrm } from "@/hooks/use-crm-queries";
+import { useUpdateCrmLeadNotes } from "@/hooks/use-crm-queries";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,20 +27,62 @@ interface CallingCrmRow {
 
 export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
   const { toast } = useToast();
-  const updateMutation = useUpdateCallingCrm();
+  const updateMutation = useUpdateCrmLeadNotes();
+  const isSavingNotes = updateMutation.isPending;
   
   // Column order state with persistence
   const [columnOrder, setColumnOrder] = useColumnOrder("calling");
   
   // Editable notes state
   const [editingNotes, setEditingNotes] = useState<Record<number, string>>({});
+
+  /**
+   * FEATURE 2: Optimistic Update for Notes
+   *
+   * Workflow:
+   * 1. UI updates INSTANTLY (optimistic)
+   * 2. Background API call
+   * 3. On error: Automatic rollback + toast
+   * 4. On success: Server sync + toast
+   */
+  const saveNotesOptimistic = useCallback(
+    async (leadId: number, notes: string) => {
+      try {
+        // Mutation handles optimistic update automatically via onMutate
+        await updateMutation.mutateAsync({ leadId, notes });
+
+        // Success: Clear editing state
+        setEditingNotes((prev) => {
+          const next = { ...prev };
+          delete next[leadId];
+          return next;
+        });
+
+        toast({
+          title: "✓ Saved",
+          description: "Notes updated successfully",
+          duration: 2000,
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Please try again";
+        // Error: Mutation already rolled back via onError
+        toast({
+          variant: "destructive",
+          title: "✗ Failed to save notes",
+          description: message,
+          duration: 4000,
+        });
+      }
+    },
+    [updateMutation, toast]
+  );
   
   /**
    * FEATURE 1: Column Configuration with Drag-and-Drop
    */
-  const baseColumns: ColumnConfig[] = useMemo(() => [
+  const baseColumns: Array<ColumnConfig<CallingCrmRow>> = useMemo(() => [
     {
-      id: "index",
+      id: "customer_index",
       label: "#",
       minWidth: "w-[100px]",
       render: (row) => (
@@ -112,7 +154,7 @@ export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
       label: "Notes (Editable)",
       minWidth: "min-w-[250px]",
       render: (row) => {
-        const isEditing = editingNotes.hasOwnProperty(row.id);
+        const isEditing = Object.prototype.hasOwnProperty.call(editingNotes, row.id);
         const currentNotes = isEditing ? editingNotes[row.id] : row.notes || "";
         
         return (
@@ -135,7 +177,7 @@ export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
                 <Button
                   size="sm"
                   onClick={() => saveNotesOptimistic(row.id, currentNotes)}
-                  disabled={updateMutation.isPending}
+                  disabled={isSavingNotes}
                 >
                   Save
                 </Button>
@@ -195,74 +237,37 @@ export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
         <span className="text-sm">{row.assistantcalling || "—"}</span>
       ),
     },
-  ], [editingNotes]);
+  ], [editingNotes, saveNotesOptimistic, isSavingNotes]);
   
   /**
    * Apply saved column order
    */
   const orderedColumns = useMemo(() => {
     if (!columnOrder || columnOrder.length === 0) return baseColumns;
+
+    type ColId = ColumnConfig<CallingCrmRow>["id"];
+    const normalizedOrder = columnOrder.map((id) => (id === "index" ? "customer_index" : id));
     
     const columnMap = new Map(baseColumns.map((c) => [c.id, c]));
-    const reordered = columnOrder
-      .map((id) => columnMap.get(id))
-      .filter((c): c is ColumnConfig => c !== undefined);
+    const reordered = normalizedOrder
+      .map((id) => columnMap.get(id as ColId))
+      .filter((c): c is ColumnConfig<CallingCrmRow> => c !== undefined);
     
     // Add any new columns not in saved order
-    const existingIds = new Set(columnOrder);
+    const existingIds = new Set(normalizedOrder);
     const newColumns = baseColumns.filter((c) => !existingIds.has(c.id));
     
     return [...reordered, ...newColumns];
   }, [baseColumns, columnOrder]);
   
-  /**
-   * FEATURE 2: Optimistic Update for Notes
-   * 
-   * Workflow:
-   * 1. UI updates INSTANTLY (optimistic)
-   * 2. Background API call
-   * 3. On error: Automatic rollback + toast
-   * 4. On success: Server sync + toast
-   */
-  const saveNotesOptimistic = useCallback(
-    async (callingId: number, notes: string) => {
-      try {
-        // Mutation handles optimistic update automatically via onMutate
-        await updateMutation.mutateAsync({ callingId, payload: { notes } });
-        
-        // Success: Clear editing state
-        setEditingNotes((prev) => {
-          const next = { ...prev };
-          delete next[callingId];
-          return next;
-        });
-        
-        // Success toast
-        toast({
-          title: "✓ Saved",
-          description: "Notes updated successfully",
-          duration: 2000,
-        });
-      } catch (e: any) {
-        // Error: Mutation already rolled back via onError
-        // User sees previous value restored automatically
-        toast({
-          variant: "destructive",
-          title: "✗ Failed to save notes",
-          description: e?.message || "Please try again",
-          duration: 4000,
-        });
-      }
-    },
-    [updateMutation, toast]
-  );
+  // (saveNotesOptimistic moved above baseColumns so hooks deps stay correct)
   
   /**
    * Handle column reorder
    * CRITICAL: Does NOT trigger data refetch
    */
   const handleColumnReorder = useCallback(
-    async (newColumns: ColumnConfig[]) => {
+    async (newColumns: Array<ColumnConfig<CallingCrmRow>>) => {
       await setColumnOrder(newColumns.map((c) => c.id));
       
       toast({

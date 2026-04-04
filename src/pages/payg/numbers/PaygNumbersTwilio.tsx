@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { paygApi as api } from "@/lib/api";
 import { isAuthenticated } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/errors";
 
 type TwilioNumber = {
   id: number;
@@ -63,6 +64,10 @@ type Assistant = {
   user_id: number | null;
   is_active: boolean;
   created_at: string | null;
+};
+
+type TwilioNumbersQueryData = {
+  numbers: TwilioNumber[];
 };
 
 function fmtDate(iso: string | null | undefined) {
@@ -117,8 +122,8 @@ function AddNumberDialog({
       toast.success(`Number ${res.number.phone_number} added.`);
       setOpen(false);
       reset();
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to add number.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to add number."));
     } finally {
       setSaving(false);
     }
@@ -274,8 +279,8 @@ function LinkAssistantDialog({
       onSaved(res.number as TwilioNumber);
       toast.success("Saved.");
       setOpen(false);
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to save changes.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to save changes."));
     } finally {
       setSaving(false);
     }
@@ -363,8 +368,8 @@ function StartCallDialog({ number, disabled }: { number: TwilioNumber; disabled?
       toast.success(`Call initiated to ${res.to}. SID: ${res.call_sid}`);
       setOpen(false);
       setToNumber("");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to start call.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to start call."));
     } finally {
       setCalling(false);
     }
@@ -438,8 +443,14 @@ export default function PaygNumbersTwilio() {
     refetchOnWindowFocus: true,
   });
 
-  const rows: TwilioNumber[] = (data?.numbers ?? []) as TwilioNumber[];
-  const assistants: Assistant[] = (assistantsQ.data?.assistants ?? []) as Assistant[];
+  const rows: TwilioNumber[] = useMemo(
+    () => (data?.numbers ?? []) as TwilioNumber[],
+    [data?.numbers],
+  );
+  const assistants: Assistant[] = useMemo(
+    () => (assistantsQ.data?.assistants ?? []) as Assistant[],
+    [assistantsQ.data?.assistants],
+  );
   const linkedAssistantIds = useMemo(
     () => new Set(rows.filter((n) => n.assistant_id != null).map((n) => n.assistant_id as number)),
     [rows],
@@ -447,17 +458,17 @@ export default function PaygNumbersTwilio() {
 
   function handleAdded(num: TwilioNumber) {
     // Fast local update + eventual refetch.
-    queryClient.setQueryData(["payg", "twilio", "numbers"], (prev: any) => {
-      const prevNumbers = (prev?.numbers ?? []) as TwilioNumber[];
-      return { ...(prev ?? {}), numbers: [num, ...prevNumbers] };
+    queryClient.setQueryData<TwilioNumbersQueryData>(["payg", "twilio", "numbers"], (prev) => {
+      const prevNumbers = prev?.numbers ?? [];
+      return { ...(prev ?? { numbers: [] }), numbers: [num, ...prevNumbers] };
     });
   }
 
   function handleUpdated(updated: TwilioNumber) {
-    queryClient.setQueryData(["payg", "twilio", "numbers"], (prev: any) => {
-      const prevNumbers = (prev?.numbers ?? []) as TwilioNumber[];
+    queryClient.setQueryData<TwilioNumbersQueryData>(["payg", "twilio", "numbers"], (prev) => {
+      const prevNumbers = prev?.numbers ?? [];
       return {
-        ...(prev ?? {}),
+        ...(prev ?? { numbers: [] }),
         numbers: prevNumbers.map((n) => (n.id === updated.id ? updated : n)),
       };
     });
@@ -466,17 +477,17 @@ export default function PaygNumbersTwilio() {
   async function handleDelete(id: number) {
     try {
       const res = await api.twilio.deleteNumber(id);
-      queryClient.setQueryData(["payg", "twilio", "numbers"], (prev: any) => {
-        const prevNumbers = (prev?.numbers ?? []) as TwilioNumber[];
-        return { ...(prev ?? {}), numbers: prevNumbers.filter((n) => n.id !== id) };
+      queryClient.setQueryData<TwilioNumbersQueryData>(["payg", "twilio", "numbers"], (prev) => {
+        const prevNumbers = prev?.numbers ?? [];
+        return { ...(prev ?? { numbers: [] }), numbers: prevNumbers.filter((n) => n.id !== id) };
       });
       if (res?.unlinked_assistant?.name) {
         toast.success(`Number removed. Assistant "${res.unlinked_assistant.name}" has been unlinked.`);
       } else {
         toast.success("Number removed.");
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to delete number.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to delete number."));
     }
   }
 

@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { CrmLead, useCrmLeads, useUpdateCrmLeadNotes } from "@/hooks/use-crm-queries";
+import { getErrorMessage } from "@/lib/errors";
 
 function statusBadgeVariant(status: string | null): "default" | "secondary" | "destructive" | "outline" {
   const s = (status ?? "").toLowerCase();
@@ -142,7 +143,7 @@ export default function Crm() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : leadsQ.isError ? (
-            <div className="text-sm text-destructive">{(leadsQ.error as any)?.message ?? "Failed to load leads"}</div>
+            <div className="text-sm text-destructive">{getErrorMessage(leadsQ.error, "Failed to load leads")}</div>
           ) : leads.length === 0 ? (
             <div className="text-sm text-muted-foreground">No leads found.</div>
           ) : (
@@ -179,8 +180,11 @@ export default function Crm() {
                     </TableCell>
                     <TableCell>
                       {(() => {
-                        const data: any = l.data ?? {};
-                        const outcome = typeof data?.outcome === "string" ? data.outcome : (typeof data?.interest === "string" ? data.interest : null);
+                        const data = (l.data ?? {}) as Record<string, unknown>;
+                        const outcome =
+                          typeof data.outcome === "string"
+                            ? data.outcome
+                            : (typeof data.interest === "string" ? data.interest : null);
                         return outcome ? <Badge variant="outline">{outcome}</Badge> : "—";
                       })()}
                     </TableCell>

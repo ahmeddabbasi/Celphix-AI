@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import type { IncomingMessage, ServerResponse } from "http";
 
 // Silence Browserslist "caniuse-lite is outdated" warning during dev/build.
 // Prefer running `npx update-browserslist-db@latest` periodically, but we
@@ -30,13 +31,21 @@ export default defineConfig(({ mode }) => {
     console.info(`[vite] dev proxy target: ${backendHttp} (ws: ${backendWs})`);
   }
 
-  const withHttpProxyHandlers = (base: any) => ({
+  type ProxyError = Error & { code?: unknown; errno?: unknown };
+  type ProxyServer = {
+    on(
+      event: "error",
+      listener: (err: ProxyError, req: IncomingMessage, res: ServerResponse) => void,
+    ): void;
+  };
+
+  const withHttpProxyHandlers = <T extends Record<string, unknown>>(base: T) => ({
     ...base,
-    configure: (proxy: any) => {
-      proxy.on("error", (err: any, _req: any, res: any) => {
+    configure: (proxy: ProxyServer) => {
+      proxy.on("error", (err, _req, res) => {
         // Avoid noisy stack traces on every poll when backend is down.
         if (!res || res.headersSent) return;
-        const code = (err && (err.code || err.errno)) || "PROXY_ERROR";
+        const code = err.code ?? err.errno ?? "PROXY_ERROR";
         res.writeHead(502, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({

@@ -9,7 +9,7 @@ export interface ColumnConfig {
   id: string;
   label: string;
   minWidth?: string;
-  render?: (value: any, row: any) => React.ReactNode;
+  render?: (value: unknown, row: Record<string, unknown>) => React.ReactNode;
 }
 
 interface DraggableHeaderProps {
@@ -57,7 +57,7 @@ const DraggableHeader = ({ column, className }: DraggableHeaderProps) => {
 
 interface ReorderableTableProps {
   columns: ColumnConfig[];
-  data: any[];
+  data: Array<Record<string, unknown>>;
   onColumnOrderChange: (newOrder: ColumnConfig[]) => void;
   rowKey: string;
   className?: string;
@@ -136,9 +136,9 @@ export function ReorderableTable({
           </tr>
         </thead>
         <tbody>
-          {data.map(row => (
+          {data.map((row) => (
             <MemoizedTableRow
-              key={row[rowKey]}
+              key={row[rowKey] as React.Key}
               row={row}
               columns={columns}
             />
@@ -151,18 +151,22 @@ export function ReorderableTable({
 
 // Memoized row component to prevent unnecessary re-renders
 interface TableRowProps {
-  row: any;
+  row: Record<string, unknown>;
   columns: ColumnConfig[];
 }
 
 const TableRow = ({ row, columns }: TableRowProps) => {
   return (
     <tr className="border-border hover:bg-muted/50 transition-colors">
-      {columns.map(column => (
+      {columns.map((column) => {
+        const value = row[column.id];
+        const fallback = value == null || value === "" ? "—" : (value as React.ReactNode);
+        return (
         <td key={column.id} className="px-4 py-3 text-sm">
-          {column.render ? column.render(row[column.id], row) : (row[column.id] || "—")}
+          {column.render ? column.render(value, row) : fallback}
         </td>
-      ))}
+        );
+      })}
     </tr>
   );
 };

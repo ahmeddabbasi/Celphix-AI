@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useDeleteDialingFile, useDialingFiles, useImportDialingFile, useSetDialingFileLinkedAssistant } from "@/hooks/use-dialing-data-queries";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/errors";
 import { LinkedAssistantSelect, type AssistantOption } from "@/pages/dialing-data/LinkedAssistantSelect";
 import {
   Dialog,
@@ -100,7 +101,7 @@ function normalizeHeader(h: string): string {
   return (h || "")
     .trim()
     .toLowerCase()
-    .replace(/[\s\-]+/g, "_")
+    .replace(/[\s-]+/g, "_")
     .replace(/[^a-z0-9_]/g, "")
     .replace(/_+/g, "_")
     .replace(/^_+|_+$/g, "");
@@ -218,13 +219,13 @@ export default function DialingData() {
     try {
       const p = await buildCsvPreview(file);
       setPreview(p);
-    } catch (e: any) {
+    } catch (e) {
       setPreview({
         headers: [],
         sampleRows: [],
         phoneHeader: null,
         nameHeader: null,
-        issues: [e?.message ?? "Failed to read CSV."],
+        issues: [getErrorMessage(e, "Failed to read CSV.")],
       });
     } finally {
       setPreviewLoading(false);
@@ -267,12 +268,12 @@ export default function DialingData() {
         setPreview(null);
         setPreviewLoading(false);
       },
-      onError: (e: any) => {
+      onError: (e: unknown) => {
         t.update({
           id: t.id,
           variant: "destructive",
           title: "Import failed",
-          description: e?.message ?? "Failed to import CSV",
+          description: getErrorMessage(e, "Failed to import CSV"),
         });
         // Clear state so user can try again cleanly.
         const input = fileInputRef.current;
@@ -288,8 +289,12 @@ export default function DialingData() {
     try {
       await deleteM.mutateAsync(fileId);
       toast({ title: "Deleted", description: "Dialing file deleted." });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Delete failed", description: e?.message ?? "Failed to delete file" });
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description: getErrorMessage(e, "Failed to delete file"),
+      });
     }
   }
 
@@ -297,8 +302,12 @@ export default function DialingData() {
     try {
       await setLinkedAssistantM.mutateAsync({ fileId, nextAssistantId, currentAssistantId });
       toast({ title: "Saved", description: "Linked assistant updated." });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Save failed", description: e?.message ?? "Failed to update link" });
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Save failed",
+        description: getErrorMessage(e, "Failed to update link"),
+      });
     }
   }
 
@@ -485,7 +494,7 @@ export default function DialingData() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : filesQ.isError ? (
-            <div className="text-sm text-destructive">{(filesQ.error as any)?.message ?? "Failed to load files"}</div>
+            <div className="text-sm text-destructive">{getErrorMessage(filesQ.error, "Failed to load files")}</div>
           ) : rows.length === 0 ? (
             <div className="text-sm text-muted-foreground">No dialing files yet.</div>
           ) : (

@@ -73,7 +73,7 @@ interface ActivityEvent {
   event_type: string;
   description: string;
   severity: "info" | "warning" | "error";
-  metadata: any;
+  metadata: Record<string, unknown> | null;
 }
 
 interface ActivityStreamResponse {
@@ -424,8 +424,9 @@ export function useRevokeUserCCAccess() {
 
 interface PoolKeyEntry {
   id: number;
-  provider: string;
+  provider: "openai" | "deepgram";
   name: string | null;
+  key_preview: string | null;
   created_at: string;
 }
 

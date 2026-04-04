@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminPortalSkeletons } from "@/components/ui/skeletons";
 import { Switch } from "@/components/ui/switch";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
+import { getErrorMessage } from "@/lib/errors";
 import { 
   useAdminUsers, 
   useAdminActivityStreamSimple, 
@@ -127,10 +128,10 @@ export default function SuperAdminPortal() {
         max_assistants: 10,
         max_concurrent_sessions: 10,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create user",
+        description: getErrorMessage(error, "Failed to create user"),
         variant: "destructive",
       });
     }
@@ -145,10 +146,10 @@ export default function SuperAdminPortal() {
       });
       setAddCredentialDialogOpen(false);
       setNewCredential({ user_id: 0, provider: "openai", api_key: "" });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to add credential",
+        description: getErrorMessage(error, "Failed to add credential"),
         variant: "destructive",
       });
     }
@@ -163,10 +164,10 @@ export default function SuperAdminPortal() {
       });
       setUpdateQuotaDialogOpen(false);
       setSelectedUser(null);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update quota",
+        description: getErrorMessage(error, "Failed to update quota"),
         variant: "destructive",
       });
     }
@@ -182,8 +183,8 @@ export default function SuperAdminPortal() {
       toast({ title: "Success", description: "Key added to global pool" });
       setAddPoolKeyDialogOpen(false);
       setNewPoolKey({ provider: "openai", api_key: "", name: "" });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to add key", variant: "destructive" });
+    } catch (error) {
+      toast({ title: "Error", description: getErrorMessage(error, "Failed to add key"), variant: "destructive" });
     }
   };
 
@@ -191,8 +192,8 @@ export default function SuperAdminPortal() {
     try {
       await removePoolKeyMutation.mutateAsync({ provider, id });
       toast({ title: "Success", description: "Key removed from global pool" });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to remove key", variant: "destructive" });
+    } catch (error) {
+      toast({ title: "Error", description: getErrorMessage(error, "Failed to remove key"), variant: "destructive" });
     }
   };
 
@@ -206,10 +207,10 @@ export default function SuperAdminPortal() {
       });
       setDeleteUserDialogOpen(false);
       setUserToDelete(null);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete user",
+        description: getErrorMessage(error, "Failed to delete user"),
         variant: "destructive",
       });
     }
@@ -222,10 +223,10 @@ export default function SuperAdminPortal() {
         title: "CC Access Revoked",
         description: `Command Center access removed for @${user.username}. They have been notified.`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to revoke CC access",
+        description: getErrorMessage(error, "Failed to revoke CC access"),
         variant: "destructive",
       });
     }
@@ -236,8 +237,8 @@ export default function SuperAdminPortal() {
       const result = await toggleVisibilityMutation.mutateAsync(voiceId);
       const action = result.visible ? "shown" : "hidden";
       toast({ title: "Success", description: `Voice "${result.display_name}" is now ${action}` });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to toggle visibility", variant: "destructive" });
+    } catch (error) {
+      toast({ title: "Error", description: getErrorMessage(error, "Failed to toggle visibility"), variant: "destructive" });
     }
   };
 
@@ -258,8 +259,8 @@ export default function SuperAdminPortal() {
       toast({ title: "Success", description: `Voice "${voiceForm.display_name}" updated successfully` });
       setEditVoiceDialogOpen(false);
       setSelectedVoice(null);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update voice", variant: "destructive" });
+    } catch (error) {
+      toast({ title: "Error", description: getErrorMessage(error, "Failed to update voice"), variant: "destructive" });
     }
   };
 
@@ -278,7 +279,7 @@ export default function SuperAdminPortal() {
     return `${hours}h ${minutes}m`;
   };
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = (severity: string): BadgeProps["variant"] => {
     switch (severity) {
       case "error":
         return "destructive";
@@ -317,9 +318,9 @@ export default function SuperAdminPortal() {
 
   // Calculate stats
   const totalUsers = users.length;
-  const totalAssistants = users.reduce((sum: number, u: any) => sum + u.assistant_count, 0);
-  const totalActiveCalls = users.reduce((sum: number, u: any) => sum + u.active_calls, 0);
-  const totalCallDuration = users.reduce((sum: number, u: any) => sum + u.total_call_duration, 0);
+  const totalAssistants = users.reduce((sum: number, u) => sum + u.assistant_count, 0);
+  const totalActiveCalls = users.reduce((sum: number, u) => sum + u.active_calls, 0);
+  const totalCallDuration = users.reduce((sum: number, u) => sum + u.total_call_duration, 0);
 
   return (
     <div className="space-y-[clamp(1.25rem,2.4vw,2.25rem)]">
@@ -445,7 +446,7 @@ export default function SuperAdminPortal() {
                       <SelectValue placeholder="Select user" />
                     </SelectTrigger>
                     <SelectContent>
-                      {users.map((user: any) => (
+                      {users.map((user) => (
                         <SelectItem key={user.id} value={user.id.toString()}>
                           {user.display_name} (@{user.username})
                         </SelectItem>
@@ -587,7 +588,7 @@ export default function SuperAdminPortal() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user: any) => (
+                  {users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div>
@@ -906,7 +907,7 @@ export default function SuperAdminPortal() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {keys.map((key: any) => (
+                              {keys.map((key) => (
                                 <TableRow key={key.id}>
                                   <TableCell className="font-mono text-xs">{key.id}</TableCell>
                                   <TableCell>{key.name ?? <span className="text-muted-foreground italic">—</span>}</TableCell>
@@ -955,12 +956,12 @@ export default function SuperAdminPortal() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {activities.map((event: any) => (
+                {activities.map((event) => (
                   <div
                     key={event.id}
                     className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                   >
-                    <Badge variant={getSeverityColor(event.severity) as any} className="mt-0.5">
+                    <Badge variant={getSeverityColor(event.severity)} className="mt-0.5">
                       {event.severity}
                     </Badge>
                     <div className="flex-1">

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { paygApi as api } from "@/lib/api";
 import { isAuthenticated } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/errors";
 import {
   Card,
   CardContent,
@@ -112,7 +113,7 @@ async function exportToPdf(rows: PaygCallRow[], windowLabel: string): Promise<vo
     },
     margin: { left: 14, right: 14 },
     didDrawPage: (data) => {
-      const pageCount = (doc as any).internal.getNumberOfPages();
+      const pageCount = doc.getNumberOfPages();
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
       doc.text(
@@ -190,7 +191,7 @@ export default function PaygCalls() {
     refetchOnWindowFocus: true,
   });
 
-  const calls = data?.calls ?? [];
+  const calls = useMemo(() => data?.calls ?? [], [data?.calls]);
   const callRows: PaygCallRow[] = useMemo(() => {
     return calls.map((c) => {
       const start = c.start_time;
@@ -263,8 +264,8 @@ export default function PaygCalls() {
     try {
       await exportToPdf(rows, windowLabel);
       toast.success(`Exported ${rows.length} record(s) as PDF.`);
-    } catch (err: any) {
-      toast.error(err?.message ?? "Export failed.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Export failed."));
     } finally {
       setExporting(false);
     }

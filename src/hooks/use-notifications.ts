@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { isAuthenticated } from "@/lib/auth";
 import type { AppNotification } from "@/lib/notifications";
+import { USER_PROFILE_KEY } from "@/hooks/use-user-profile";
 
 export const NOTIFICATIONS_KEY = ["notifications"] as const;
 
@@ -41,6 +42,18 @@ export function useNotifications() {
     refetchInterval: authed ? 30_000 : false,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
+    onSuccess: (notifications) => {
+      // If access state changed, refresh the user profile so nav guards + switcher update.
+      const shouldRefreshProfile = notifications.some(
+        (n) =>
+          n.type === "access_approved" ||
+          n.type === "access_rejected" ||
+          n.action_type === "cc_access_revoked",
+      );
+      if (shouldRefreshProfile) {
+        qc.invalidateQueries({ queryKey: USER_PROFILE_KEY });
+      }
+    },
   });
 
   // ── Mark single read (optimistic) ────────────────────────────────────────

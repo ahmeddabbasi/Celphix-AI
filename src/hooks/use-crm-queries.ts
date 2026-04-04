@@ -14,7 +14,7 @@ export type CrmLead = {
   callsummary: string | null;
   notes: string | null;
   call_transfer?: string | null;
-  data?: Record<string, any> | null;
+  data?: Record<string, unknown> | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -91,11 +91,11 @@ export function useUpdateCrmLeadNotes() {
   return useMutation({
     mutationFn: ({ leadId, notes }: { leadId: number; notes: string }) => api.crm.updateNotes(leadId, notes),
     onSuccess: async (_res, vars) => {
-      qc.setQueriesData({ queryKey: ["crm", "leads"] }, (old: any) => {
-        if (!old?.leads || !Array.isArray(old.leads)) return old;
+      qc.setQueriesData<CrmListLeadsResponse | undefined>({ queryKey: ["crm", "leads"] }, (old) => {
+        if (!old?.leads) return old;
         return {
           ...old,
-          leads: old.leads.map((l: any) => (l?.id === vars.leadId ? { ...l, notes: vars.notes } : l)),
+          leads: old.leads.map((l) => (l.id === vars.leadId ? { ...l, notes: vars.notes } : l)),
         };
       });
       await qc.invalidateQueries({ queryKey: ["crm", "leads"] });

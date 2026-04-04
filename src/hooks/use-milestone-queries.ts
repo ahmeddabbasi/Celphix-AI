@@ -19,7 +19,7 @@ export interface MilestoneEvent {
   metric_value?: number;
   previous_record?: number;
   assistant_id?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 

@@ -132,7 +132,7 @@ export function useCreateEvent() {
       // Optionally: Add optimistic update for immediate UI response
       // (current approach: invalidate and refetch is simpler)
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Failed to create event:', error)
       throw error
     }

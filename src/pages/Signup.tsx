@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
@@ -21,19 +21,20 @@ type FastApiValidationError = {
 };
 
 function extractErrorMessage(data: unknown, fallback: string) {
-  const obj = (data ?? {}) as Record<string, any>;
+  const obj: Record<string, unknown> =
+    typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
 
   // FastAPI/Starlette common shapes:
   // - { detail: "..." }
   // - { detail: [ { loc: [...], msg: "..." }, ... ] }  (Pydantic validation)
-  if (typeof obj.detail === "string" && obj.detail.trim()) return obj.detail;
+  const detail = obj.detail;
+  if (typeof detail === "string" && detail.trim()) return detail;
 
-  const detail = obj.detail as unknown;
   if (Array.isArray(detail) && detail.length) {
     const first = detail[0] as FastApiValidationError;
-    const loc = Array.isArray(first?.loc) ? first.loc : [];
+    const loc = Array.isArray(first.loc) ? first.loc : [];
     const field = typeof loc[loc.length - 1] === "string" ? String(loc[loc.length - 1]) : "input";
-    const msg = typeof first?.msg === "string" ? first.msg : fallback;
+    const msg = typeof first.msg === "string" ? first.msg : fallback;
     return `${field}: ${msg}`;
   }
 
@@ -41,7 +42,11 @@ function extractErrorMessage(data: unknown, fallback: string) {
 
   const errors = obj.errors as unknown;
   if (Array.isArray(errors) && errors.length) {
-    const m = (errors[0] as any)?.message;
+    const first = errors[0];
+    const m =
+      typeof first === "object" && first !== null
+        ? (first as Record<string, unknown>).message
+        : undefined;
     if (typeof m === "string" && m.trim()) return m;
   }
 
@@ -284,9 +289,9 @@ export default function Signup() {
 
           <p className="signup-prompt">
             Already have an account?{" "}
-            <a href="/login" className="signup-link">
+            <Link to="/login" className="signup-link">
               Sign in
-            </a>
+            </Link>
           </p>
 
           <p className="login-auth-footer">© {new Date().getFullYear()} Celphix. All rights reserved.</p>

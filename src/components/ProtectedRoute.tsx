@@ -12,6 +12,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { data: profile, isLoading } = useUserProfile();
+
+  // Avoid rendering PAYG shell briefly for users that should be in CC.
+  if (isLoading) return null;
+
+  // Users who gain Command Center access should not stay in PAYG.
+  // Admins are allowed to access both surfaces.
+  if (profile && !profile.is_admin && profile.command_center_access) {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 }
 

@@ -29,9 +29,11 @@ const PERIODS = [
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) {
+type TooltipPayloadLike = { payload: Record<string, unknown> };
+
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadLike[]; label?: string }) {
   if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
+  const d = payload[0]?.payload as { call_count?: number; avg_duration?: number };
   return (
     <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-lg text-xs">
       <p className="font-semibold mb-1 text-foreground">
@@ -39,12 +41,12 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       </p>
       <div className="flex items-center justify-between gap-6">
         <span className="text-muted-foreground">Calls</span>
-        <span className="font-bold text-foreground">{d.call_count}</span>
+        <span className="font-bold text-foreground">{d.call_count ?? 0}</span>
       </div>
-      {d.avg_duration > 0 && (
+      {(d.avg_duration ?? 0) > 0 && (
         <div className="flex items-center justify-between gap-6">
           <span className="text-muted-foreground">Avg duration</span>
-          <span className="font-bold text-foreground">{Math.round(d.avg_duration)}s</span>
+          <span className="font-bold text-foreground">{Math.round(d.avg_duration ?? 0)}s</span>
         </div>
       )}
     </div>

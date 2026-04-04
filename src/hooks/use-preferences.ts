@@ -25,7 +25,7 @@ export function useUserPreferences() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (preferences: Record<string, any>) => {
+    mutationFn: async (preferences: Record<string, unknown>) => {
       // Save to localStorage immediately for instant feedback
       localStorage.setItem(FALLBACK_STORAGE_KEY, JSON.stringify(preferences));
       

@@ -33,4 +33,5 @@ export interface UserProfile {
   role: string;
   command_center_access: boolean;
   cc_request_status: "pending" | "approved" | "rejected" | "revoked" | null;
+  auth_provider: string | null;
 }

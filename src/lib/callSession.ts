@@ -12,7 +12,7 @@ export type CallCustomer = {
   number?: string;
 };
 
-export type CallEvent = { ts: number; type: string; payload?: any };
+export type CallEvent = { ts: number; type: string; payload?: unknown };
 
 export type TranscriptUpdate = {
   kind: "partial" | "final";
@@ -39,6 +39,10 @@ type Listener = () => void;
 
 function now() {
   return Date.now();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 class CallSessionSingleton {
@@ -127,7 +131,7 @@ class CallSessionSingleton {
     this.emit();
   }
 
-  pushEvent(type: string, payload?: any) {
+  pushEvent(type: string, payload?: unknown) {
     this.events = [{ ts: now(), type, payload }, ...this.events].slice(0, 500);
     this.emit();
   }
@@ -220,32 +224,31 @@ class CallSessionSingleton {
 
   // Called by AssistantConfig from within its own ws.onmessage handler.
   // Keeps singleton state (callFlowStatus, customer, partials) in sync.
-  handleMessage(parsed: any) {
+  handleMessage(parsed: unknown) {
     try {
-      if (parsed?.type) {
-        this.pushEvent("ws_message", { type: parsed.type, payload: parsed });
-      } else {
-        this.pushEvent("ws_message", { type: "(missing)", payload: parsed });
-      }
+      const msg = isRecord(parsed) ? parsed : {};
+      const type = typeof msg.type === "string" ? msg.type : undefined;
 
-      if (parsed?.type === "connection_ready") {
+      this.pushEvent("ws_message", { type: type ?? "(missing)", payload: parsed });
+
+      if (type === "connection_ready") {
         this.setCallFlowStatus("idle");
       }
 
-      if (parsed?.type === "call_started") {
+      if (type === "call_started") {
         // Dismiss warming overlay — call is live.
         this.setCallFlowStatus("idle");
       }
 
-      if (parsed?.type === "start_call") {
+      if (type === "start_call") {
         this.setCallFlowStatus("warming");
       }
 
-      if (parsed?.type === "calling_index_assigned") {
+      if (type === "calling_index_assigned") {
         this.setCallFlowStatus("ready");
-        const index = parsed?.index ?? parsed?.customer_index;
-        const name = parsed?.name ?? parsed?.customer_name ?? parsed?.customerName;
-        const number = parsed?.phone_number ?? parsed?.phone ?? parsed?.number;
+        const index = msg.index ?? msg.customer_index;
+        const name = msg.name ?? msg.customer_name ?? msg.customerName;
+        const number = msg.phone_number ?? msg.phone ?? msg.number;
         this.setCurrentCustomer({
           index,
           name: typeof name === "string" ? name : undefined,
@@ -253,27 +256,28 @@ class CallSessionSingleton {
         });
       }
 
-      if (parsed?.type === "partial_transcription") {
-        const t = parsed?.text ?? parsed?.transcript ?? parsed?.data?.text ?? "";
+      if (type === "partial_transcription") {
+        const data = isRecord(msg.data) ? msg.data : undefined;
+        const t = msg.text ?? msg.transcript ?? data?.text ?? "";
         if (typeof t === "string") {
           const cleaned = t.replace(/\s+/g, " ").trim();
           this.setPartialUserText(cleaned);
         }
       }
 
-      if (parsed?.type === "transcription") {
+      if (type === "transcription") {
         this.setPartialUserText("");
       }
 
-      if (parsed?.type === "debug_event") {
+      if (type === "debug_event") {
         this.pushEvent("debug_event", parsed);
       }
 
-      if (parsed?.type === "stt_status") {
+      if (type === "stt_status") {
         this.pushEvent("stt_status", parsed);
       }
 
-      if (parsed?.type === "call_ended") {
+      if (type === "call_ended") {
         this.pushEvent("call_ended", parsed);
         this.setCallFlowStatus("ending");
         this.setCurrentCustomer(null);
@@ -284,10 +288,10 @@ class CallSessionSingleton {
         }, 1000);
       }
 
-      if (parsed?.type === "auto_start_next_call" || parsed?.type === "auto_start_first_call") {
+      if (type === "auto_start_next_call" || type === "auto_start_first_call") {
         this.setCallFlowStatus("warming");
         this.setCurrentCustomer({
-          index: parsed?.customer_index ?? parsed?.index ?? parsed?.customerIndex,
+          index: msg.customer_index ?? msg.index ?? msg.customerIndex,
         });
         this.setPartialUserText("");
       }

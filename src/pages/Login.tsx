@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
@@ -253,7 +253,7 @@ export default function Login() {
 
           <p className="signup-prompt">
             Want CELPHIXING?{" "}
-            <a href="/signup" className="signup-link">Sign up</a>
+            <Link to="/signup" className="signup-link">Sign up</Link>
           </p>
 
           <p className="login-auth-footer">
