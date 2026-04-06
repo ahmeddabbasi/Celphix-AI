@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { AlertCircle, ArrowLeft, ChevronDown, Loader2, Save, Volume2, Pencil, Check, X } from "lucide-react";
 
@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -1874,6 +1875,23 @@ export default function AssistantConfig() {
 
   const debugEvents = events;
 
+  type AssistantConfigTab = "test" | "automation" | "configurations";
+  const [activeTab, setActiveTab] = useState<AssistantConfigTab>("test");
+  const handleTabChange = useCallback((value: string) => {
+    const next: AssistantConfigTab =
+      value === "automation" || value === "configurations" ? value : "test";
+    setActiveTab(next);
+    // After switching, move focus into the newly-active content area.
+    requestAnimationFrame(() => {
+      try {
+        const el = document.querySelector<HTMLElement>(`[data-assistant-tab-content="${next}"]`);
+        el?.focus();
+      } catch {
+        // no-op
+      }
+    });
+  }, []);
+
   if (loading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-6">
@@ -1897,7 +1915,7 @@ export default function AssistantConfig() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-[clamp(1.25rem,2.4vw,2.25rem)]">
+    <div className="h-full flex flex-col">
       {/* ── Header: Back + Name (left) | Start Call (right, same row) ── */}
       <div data-reveal className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -1991,34 +2009,74 @@ export default function AssistantConfig() {
         </div>
       </div>
 
-      {/* Reconnecting banner — shown while WS is reconnecting */}
-      {(wsStatus === "reconnecting" || wsStatus === "connecting") && (
-        <div
-          className="flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs text-accent-foreground"
-          data-reveal
+      {/* ── Tab Bar — Test | Automations | Configurations ── */}
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="flex-1 min-h-0"
+        style={
+          {
+            "--assistant-tab-bg": isPayg ? "#008613" : "#214226",
+            "--assistant-tab-active-bg": "#FFEA00",
+          } as React.CSSProperties
+        }
+      >
+        <TabsList className="h-auto w-full flex-wrap justify-start bg-transparent p-0 gap-3">
+          <TabsTrigger
+            value="test"
+            className="h-9 sm:h-10 rounded-md bg-[var(--assistant-tab-bg)] px-4 py-0 text-sm font-semibold text-white shadow-none transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background data-[state=active]:bg-[var(--assistant-tab-active-bg)] data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:opacity-100 data-[state=active]:hover:opacity-100"
+          >
+            Test
+          </TabsTrigger>
+          <TabsTrigger
+            value="automation"
+            className="h-9 sm:h-10 rounded-md bg-[var(--assistant-tab-bg)] px-4 py-0 text-sm font-semibold text-white shadow-none transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background data-[state=active]:bg-[var(--assistant-tab-active-bg)] data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:opacity-100 data-[state=active]:hover:opacity-100"
+          >
+            Automations
+          </TabsTrigger>
+          <TabsTrigger
+            value="configurations"
+            className="h-9 sm:h-10 rounded-md bg-[var(--assistant-tab-bg)] px-4 py-0 text-sm font-semibold text-white shadow-none transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background data-[state=active]:bg-[var(--assistant-tab-active-bg)] data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:opacity-100 data-[state=active]:hover:opacity-100"
+          >
+            Configurations
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent
+          value="test"
+          forceMount
+          tabIndex={-1}
+          data-assistant-tab-content="test"
+          className="mt-0 space-y-4 lg:space-y-6 outline-none"
         >
-          <span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
-          {wsStatus === "reconnecting" ? "Re-establishing connection…" : "Connecting…"}
-        </div>
-      )}
+          {/* Reconnecting banner — shown while WS is reconnecting */}
+          {(wsStatus === "reconnecting" || wsStatus === "connecting") && (
+            <div
+              className="flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs text-accent-foreground"
+              data-reveal
+            >
+              <span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
+              {wsStatus === "reconnecting" ? "Re-establishing connection…" : "Connecting…"}
+            </div>
+          )}
 
-      {/* Current customer banner (visible during call) */}
-      {wsStatus === "connected" && currentCustomer && (
-        <div data-reveal className="rounded-md border border-border bg-muted/50 p-3 text-sm">
-          <p className="font-semibold text-foreground">
-            {typeof currentCustomer.index !== "undefined" && currentCustomer.index !== null
-              ? `Customer #${String(currentCustomer.index)}`
-              : "Customer"}
-            {currentCustomer.name?.trim() ? ` — ${currentCustomer.name}` : ""}
-          </p>
-          {currentCustomer.number?.trim() ? (
-            <p className="text-muted-foreground">{currentCustomer.number}</p>
-          ) : null}
-        </div>
-      )}
+          {/* Current customer banner (visible during call) */}
+          {wsStatus === "connected" && currentCustomer && (
+            <div data-reveal className="rounded-md border border-border bg-muted/50 p-3 text-sm">
+              <p className="font-semibold text-foreground">
+                {typeof currentCustomer.index !== "undefined" && currentCustomer.index !== null
+                  ? `Customer #${String(currentCustomer.index)}`
+                  : "Customer"}
+                {currentCustomer.name?.trim() ? ` — ${currentCustomer.name}` : ""}
+              </p>
+              {currentCustomer.number?.trim() ? (
+                <p className="text-muted-foreground">{currentCustomer.number}</p>
+              ) : null}
+            </div>
+          )}
 
-      {/* ── Main Content Area (2 columns) ── */}
-      <div className="flex-1 grid lg:grid-cols-3 gap-4 min-h-0">
+          {/* ── Main Content Area (2 columns) ── */}
+          <div className="flex-1 grid lg:grid-cols-3 gap-4 lg:gap-6 min-h-0">
         {/* Left Column: Config (2/3 width) */}
         <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
           {/* Top Section: Voice settings + Background noise settings */}
@@ -2403,6 +2461,30 @@ export default function AssistantConfig() {
           </div>
         </DialogContent>
       </Dialog>
+
+        </TabsContent>
+
+        <TabsContent
+          value="automation"
+          tabIndex={-1}
+          data-assistant-tab-content="automation"
+          className="mt-4 flex-1 min-h-0 outline-none"
+        >
+          <div className="flex h-full min-h-[240px] items-center justify-center rounded-md border border-dashed border-border bg-muted/20 px-6 text-center text-sm text-muted-foreground">
+            No automations configured yet.
+          </div>
+        </TabsContent>
+        <TabsContent
+          value="configurations"
+          tabIndex={-1}
+          data-assistant-tab-content="configurations"
+          className="mt-4 flex-1 min-h-0 outline-none"
+        >
+          <div className="flex h-full min-h-[240px] items-center justify-center rounded-md border border-dashed border-border bg-muted/20 px-6 text-center text-sm text-muted-foreground">
+            No configurations available yet.
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

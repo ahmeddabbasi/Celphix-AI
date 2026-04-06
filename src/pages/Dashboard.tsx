@@ -69,8 +69,8 @@ function StatCard({
   loading: boolean;
 }) {
   return (
-    <Card className="group p-[clamp(18px,2.8vw,28px)]">
-      <div className="flex items-center gap-[clamp(12px,2vw,18px)]">
+    <Card className="group h-full p-6">
+      <div className="flex items-center gap-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10">
           <Icon className="h-5 w-5 text-primary transition-transform duration-300 ease-spring group-hover:rotate-[8deg] group-hover:scale-[1.1]" />
         </div>
@@ -102,7 +102,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-[clamp(28px,4vw,56px)]">
+    <div className="space-y-6 lg:space-y-8">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div data-reveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Summary metrics ────────────────────────────────────────────── */}
-      <div className="grid gap-[clamp(14px,2.4vw,22px)] sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         <StatCard
           label="Total Calls"
           value={summary?.calls ?? "—"}
@@ -154,23 +154,21 @@ export default function Dashboard() {
       </div>
 
       {/* ── Active assistants + Session info ───────────────────────────── */}
-      <div className="grid grid-cols-12 gap-[clamp(14px,2.4vw,22px)]">
-        <div className="col-span-12 lg:col-span-7">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3 lg:gap-6">
+        <div className="h-full lg:col-span-2">
           <ActiveAssistants />
         </div>
-        <div className="hidden lg:block lg:col-span-1" aria-hidden="true" />
-        <div className="col-span-12 lg:col-span-4">
+        <div className="h-full lg:col-span-1">
           <Dialing />
         </div>
       </div>
 
       {/* ── Top performers + Activity trends ───────────────────────────── */}
-      <div className="grid grid-cols-12 gap-[clamp(14px,2.4vw,22px)]">
-        <div className="col-span-12 lg:col-span-7">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3 lg:gap-6">
+        <div className="h-full lg:col-span-2">
           <TopPerformers assistants={assistants} loading={assistantsQ.isLoading} window={window} />
         </div>
-        <div className="hidden lg:block lg:col-span-1" aria-hidden="true" />
-        <div className="col-span-12 lg:col-span-4">
+        <div className="h-full lg:col-span-1">
           <ActivityTrendsChart />
         </div>
       </div>
