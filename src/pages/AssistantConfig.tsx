@@ -1,19 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { AlertCircle, ArrowLeft, ChevronDown, Loader2, Save, Volume2, Pencil, Check, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Save, Volume2, Pencil, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -1875,22 +1869,92 @@ export default function AssistantConfig() {
 
   const debugEvents = events;
 
-  type AssistantConfigTab = "test" | "automation" | "configurations";
-  const [activeTab, setActiveTab] = useState<AssistantConfigTab>("test");
-  const handleTabChange = useCallback((value: string) => {
-    const next: AssistantConfigTab =
-      value === "automation" || value === "configurations" ? value : "test";
-    setActiveTab(next);
-    // After switching, move focus into the newly-active content area.
-    requestAnimationFrame(() => {
-      try {
-        const el = document.querySelector<HTMLElement>(`[data-assistant-tab-content="${next}"]`);
-        el?.focus();
-      } catch {
-        // no-op
-      }
-    });
+  type AssistantConfigSection = "test" | "configurations" | "automation";
+  const [activeSection, setActiveSection] = useState<AssistantConfigSection>("test");
+
+  const sectionsScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const testSectionRef = useRef<HTMLDivElement | null>(null);
+  const configurationsSectionRef = useRef<HTMLDivElement | null>(null);
+  const automationsSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToSection = useCallback((section: AssistantConfigSection) => {
+    const el =
+      section === "test"
+        ? testSectionRef.current
+        : section === "configurations"
+          ? configurationsSectionRef.current
+          : automationsSectionRef.current;
+    if (!el) return;
+
+    setActiveSection(section);
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  useEffect(() => {
+    const root = sectionsScrollContainerRef.current;
+    if (!root) return;
+
+    const sections: Array<{ key: AssistantConfigSection; el: HTMLElement | null }> = [
+      { key: "test", el: testSectionRef.current },
+      { key: "configurations", el: configurationsSectionRef.current },
+      { key: "automation", el: automationsSectionRef.current },
+    ];
+    const valid = sections.filter((s): s is { key: AssistantConfigSection; el: HTMLElement } => !!s.el);
+    if (valid.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0));
+        const top = visible[0];
+        if (!top?.target) return;
+
+        const next = valid.find((s) => s.el === top.target)?.key;
+        if (next) setActiveSection(next);
+      },
+      { root, threshold: [0.4, 0.6, 0.8] }
+    );
+
+    for (const s of valid) observer.observe(s.el);
+    return () => observer.disconnect();
+  }, []);
+
+  // ── Test Tab: Conversation auto-scroll ───────────────────────────────────
+  const conversationScrollRef = useRef<HTMLDivElement | null>(null);
+  const [conversationNearBottom, setConversationNearBottom] = useState(true);
+  const conversationHasAutoScrolledOnceRef = useRef(false);
+  const conversationLastKeyRef = useRef<string>("");
+
+  const scrollConversationToBottom = useCallback((behavior: ScrollBehavior) => {
+    const el = conversationScrollRef.current;
+    if (!el) return;
+    try {
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    } catch {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, []);
+
+  const handleConversationScroll = useCallback(() => {
+    const el = conversationScrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setConversationNearBottom(distanceFromBottom <= 100);
+  }, []);
+
+  useEffect(() => {
+    if (activeSection !== "test") return;
+    const key = `${chat.length}:${partialUserText.length}`;
+    if (key === conversationLastKeyRef.current) return;
+    conversationLastKeyRef.current = key;
+
+    if (!conversationNearBottom) return;
+
+    const behavior: ScrollBehavior = conversationHasAutoScrolledOnceRef.current ? "smooth" : "auto";
+    conversationHasAutoScrolledOnceRef.current = true;
+    requestAnimationFrame(() => scrollConversationToBottom(behavior));
+  }, [activeSection, chat.length, partialUserText.length, conversationNearBottom, scrollConversationToBottom]);
 
   if (loading) {
     return (
@@ -2009,11 +2073,9 @@ export default function AssistantConfig() {
         </div>
       </div>
 
-      {/* ── Tab Bar — Test | Automations | Configurations ── */}
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="flex-1 min-h-0"
+      {/* ── Sections (same page) — Test | Configurations | Automations ── */}
+      <div
+        className="flex-1 min-h-0 flex flex-col"
         style={
           {
             "--assistant-tab-bg": isPayg ? "#008613" : "#214226",
@@ -2021,205 +2083,281 @@ export default function AssistantConfig() {
           } as React.CSSProperties
         }
       >
-        <TabsList className="h-auto w-full flex-wrap justify-start bg-transparent p-0 gap-3">
-          <TabsTrigger
-            value="test"
+        <div role="tablist" aria-label="Assistant config sections" className="h-auto w-full flex-wrap justify-start bg-transparent p-0 gap-3 flex">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSection === "test"}
+            data-state={activeSection === "test" ? "active" : "inactive"}
+            onClick={() => scrollToSection("test")}
             className="h-9 sm:h-10 rounded-md bg-[var(--assistant-tab-bg)] px-4 py-0 text-sm font-semibold text-white shadow-none transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background data-[state=active]:bg-[var(--assistant-tab-active-bg)] data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:opacity-100 data-[state=active]:hover:opacity-100"
           >
             Test
-          </TabsTrigger>
-          <TabsTrigger
-            value="automation"
-            className="h-9 sm:h-10 rounded-md bg-[var(--assistant-tab-bg)] px-4 py-0 text-sm font-semibold text-white shadow-none transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background data-[state=active]:bg-[var(--assistant-tab-active-bg)] data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:opacity-100 data-[state=active]:hover:opacity-100"
-          >
-            Automations
-          </TabsTrigger>
-          <TabsTrigger
-            value="configurations"
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSection === "configurations"}
+            data-state={activeSection === "configurations" ? "active" : "inactive"}
+            onClick={() => scrollToSection("configurations")}
             className="h-9 sm:h-10 rounded-md bg-[var(--assistant-tab-bg)] px-4 py-0 text-sm font-semibold text-white shadow-none transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background data-[state=active]:bg-[var(--assistant-tab-active-bg)] data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:opacity-100 data-[state=active]:hover:opacity-100"
           >
             Configurations
-          </TabsTrigger>
-        </TabsList>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSection === "automation"}
+            data-state={activeSection === "automation" ? "active" : "inactive"}
+            onClick={() => scrollToSection("automation")}
+            className="h-9 sm:h-10 rounded-md bg-[var(--assistant-tab-bg)] px-4 py-0 text-sm font-semibold text-white shadow-none transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background data-[state=active]:bg-[var(--assistant-tab-active-bg)] data-[state=active]:text-black data-[state=active]:shadow-none data-[state=active]:opacity-100 data-[state=active]:hover:opacity-100"
+          >
+            Automations
+          </button>
+        </div>
 
-        <TabsContent
-          value="test"
-          forceMount
-          tabIndex={-1}
-          data-assistant-tab-content="test"
-          className="mt-0 space-y-4 lg:space-y-6 outline-none"
-        >
-          {/* Reconnecting banner — shown while WS is reconnecting */}
-          {(wsStatus === "reconnecting" || wsStatus === "connecting") && (
-            <div
-              className="flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs text-accent-foreground"
-              data-reveal
-            >
-              <span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
-              {wsStatus === "reconnecting" ? "Re-establishing connection…" : "Connecting…"}
-            </div>
-          )}
-
-          {/* Current customer banner (visible during call) */}
-          {wsStatus === "connected" && currentCustomer && (
-            <div data-reveal className="rounded-md border border-border bg-muted/50 p-3 text-sm">
-              <p className="font-semibold text-foreground">
-                {typeof currentCustomer.index !== "undefined" && currentCustomer.index !== null
-                  ? `Customer #${String(currentCustomer.index)}`
-                  : "Customer"}
-                {currentCustomer.name?.trim() ? ` — ${currentCustomer.name}` : ""}
-              </p>
-              {currentCustomer.number?.trim() ? (
-                <p className="text-muted-foreground">{currentCustomer.number}</p>
-              ) : null}
-            </div>
-          )}
-
-          {/* ── Main Content Area (2 columns) ── */}
-          <div className="flex-1 grid lg:grid-cols-3 gap-4 lg:gap-6 min-h-0">
-        {/* Left Column: Config (2/3 width) */}
-        <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
-          {/* Top Section: Voice settings + Background noise settings */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Voice */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
-                  <Volume2 className="h-4 w-4" />
-                  Assistant Voice
-                </CardTitle>
-                <CardDescription>Select the voice used for calls.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={selectedVoice ?? "__default__"}
-                    onValueChange={(v) => {
-                      if (configLocked) return;
-                      setSelectedVoice(v === "__default__" ? null : v);
-                    }}
-                    disabled={configLocked}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select voice" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {voices?.map((v) => (
-                        <SelectItem key={v.speaker_id} value={v.speaker_id}>
-                          {v.display_name} — {v.accent} ({v.gender})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    onClick={() => saveVoice()}
-                    disabled={configLocked || savingVoice || !isVoiceDirty}
-                    size="sm"
-                    className="shrink-0"
-                  >
-                    {savingVoice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  </Button>
+        <div ref={sectionsScrollContainerRef} className="mt-4 flex-1 min-h-0 overflow-y-auto">
+          {/* ── TEST ── */}
+          <div ref={testSectionRef} className="flex flex-col" style={{ scrollMarginTop: 12 }}>
+            <Card className="h-[520px] md:h-[580px] lg:h-[620px] flex flex-col">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Conversation</CardTitle>
+                    <CardDescription>Live conversation/testing area.</CardDescription>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
+                    <span className="font-mono">{wsStatus}</span>
+                    {wsStatus === "connected" && currentCustomer?.name?.trim() ? (
+                      <span className="truncate max-w-[220px]">{currentCustomer.name}</span>
+                    ) : null}
+                  </div>
                 </div>
-                {warmingUpVoice && (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    <span>Warming up voice for instant playback…</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Background noise */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Background Noise</CardTitle>
-                <CardDescription>Optional playback-only ambient noise (never sent to STT).</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-md border bg-muted/30 px-3 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium">Enable</div>
+
+              <CardContent className="flex-1 min-h-0 flex flex-col p-0">
+                <div
+                  ref={conversationScrollRef}
+                  onScroll={handleConversationScroll}
+                  className="relative flex-1 min-h-0 overflow-y-auto px-4 py-4"
+                >
+                  {chat.length === 0 && !partialUserText.trim() ? (
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                      No conversation yet. Start a call to begin.
                     </div>
-                    <Switch
-                      checked={bgNoiseEnabled}
-                      onCheckedChange={(v) => setBgNoiseEnabled(Boolean(v))}
-                      disabled={bgNoiseLocked || configLocked}
-                    />
-                  </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {chat.map((turn) => (
+                        <div
+                          key={turn.id}
+                          className={`flex items-end gap-2 ${turn.speaker === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                          {turn.speaker === "agent" && (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+                              AI
+                            </div>
+                          )}
+                          <div
+                            className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                              turn.speaker === "user"
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-primary/10 border border-primary/20"
+                            }`}
+                          >
+                            {turn.text}
+                          </div>
+                          {turn.speaker === "user" && (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-sm font-semibold">
+                              U
+                            </div>
+                          )}
+                        </div>
+                      ))}
 
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="w-20 text-xs text-muted-foreground">Volume</div>
-                    <input
-                      className="flex-1"
-                      type="range"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={bgNoiseVolume}
-                      onChange={(e) => setBgNoiseVolume(Number(e.target.value))}
-                      disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked}
-                    />
-                    <div className="w-10 text-right text-xs tabular-nums text-muted-foreground">
-                      {bgNoiseVolume}
+                      {partialUserText.trim() && (
+                        <div className="flex items-end gap-2 justify-end">
+                          <div className="max-w-[75%] rounded-lg px-3 py-2 text-sm bg-muted text-muted-foreground">
+                            <span className="opacity-80">{partialUserText}</span>
+                            <span className="opacity-60"> …</span>
+                          </div>
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-sm font-semibold">
+                            U
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
 
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="w-20 text-xs text-muted-foreground">Sound</div>
-                    <div className="flex-1 flex items-center gap-2">
-                      <Select
-                        value={bgNoiseUrl || "__none__"}
-                        onValueChange={(v) => {
-                          if (configLocked) return;
-                          stopPreview("selection_change");
-                          setBgNoiseUrl(v === "__none__" ? "" : v);
-                        }}
-                        disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder={bgNoiseOptions.length ? "Select" : "No sounds found"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">None</SelectItem>
-                          {bgNoiseOptions.map((o) => (
-                            <SelectItem key={o.id} value={o.url}>
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
+                  {!conversationNearBottom && (chat.length > 0 || partialUserText.trim()) ? (
+                    <div className="sticky bottom-3 flex justify-end">
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => void togglePreview()}
-                        disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked || !bgNoiseUrl}
+                        onClick={() => scrollConversationToBottom("smooth")}
                       >
-                        {previewPlaying ? "Stop" : "Preview"}
+                        Jump to latest
                       </Button>
                     </div>
-                  </div>
-
-                  {bgNoiseLocked && (
-                    <div className="mt-2 text-[11px] text-muted-foreground">
-                      Locked during active call.
-                    </div>
-                  )}
-
-                  {!!bgNoiseManifestError && (
-                    <div className="mt-2 text-[11px] text-red-600">
-                      Failed to load background sounds: {bgNoiseManifestError}
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Call Flow Status Modal — only shown during warmup */}
+            <Dialog open={callFlowStatus === "warming" && wsStatus === "connected"}>
+              <DialogContent className="sm:max-w-[280px] [&>button]:hidden p-6">
+                <div className="flex flex-col items-center justify-center space-y-3 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm font-medium">Warming Up...</p>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          {/* First Intro Message */}
-          <Card>
+          {/* ── CONFIGURATIONS ── */}
+          <div ref={configurationsSectionRef} className="min-h-full flex flex-col pt-6" style={{ scrollMarginTop: 12 }}>
+            <div className="flex flex-col gap-4 min-h-0">
+            {/* Top Section: Voice settings + Background noise settings */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Voice */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <Volume2 className="h-4 w-4" />
+                    Assistant Voice
+                  </CardTitle>
+                  <CardDescription>Select the voice used for calls.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={selectedVoice ?? "__default__"}
+                      onValueChange={(v) => {
+                        if (configLocked) return;
+                        setSelectedVoice(v === "__default__" ? null : v);
+                      }}
+                      disabled={configLocked}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select voice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {voices?.map((v) => (
+                          <SelectItem key={v.speaker_id} value={v.speaker_id}>
+                            {v.display_name} — {v.accent} ({v.gender})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={() => saveVoice()}
+                      disabled={configLocked || savingVoice || !isVoiceDirty}
+                      size="sm"
+                      className="shrink-0"
+                    >
+                      {savingVoice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {warmingUpVoice && (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Warming up voice for instant playback…</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Background noise */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle>Background Noise</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border bg-muted/30 px-3 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">Enable</div>
+                      </div>
+                      <Switch
+                        checked={bgNoiseEnabled}
+                        onCheckedChange={(v) => setBgNoiseEnabled(Boolean(v))}
+                        disabled={bgNoiseLocked || configLocked}
+                      />
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="w-20 text-xs text-muted-foreground">Volume</div>
+                      <input
+                        className="flex-1"
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={bgNoiseVolume}
+                        onChange={(e) => setBgNoiseVolume(Number(e.target.value))}
+                        disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked}
+                      />
+                      <div className="w-10 text-right text-xs tabular-nums text-muted-foreground">
+                        {bgNoiseVolume}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="w-20 text-xs text-muted-foreground">Sound</div>
+                      <div className="flex-1 flex items-center gap-2">
+                        <Select
+                          value={bgNoiseUrl || "__none__"}
+                          onValueChange={(v) => {
+                            if (configLocked) return;
+                            stopPreview("selection_change");
+                            setBgNoiseUrl(v === "__none__" ? "" : v);
+                          }}
+                          disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder={bgNoiseOptions.length ? "Select" : "No sounds found"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">None</SelectItem>
+                            {bgNoiseOptions.map((o) => (
+                              <SelectItem key={o.id} value={o.url}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => void togglePreview()}
+                          disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked || !bgNoiseUrl}
+                        >
+                          {previewPlaying ? "Stop" : "Preview"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {bgNoiseLocked && (
+                      <div className="mt-2 text-[11px] text-muted-foreground">
+                        Locked during active call.
+                      </div>
+                    )}
+
+                    {!!bgNoiseManifestError && (
+                      <div className="mt-2 text-[11px] text-red-600">
+                        Failed to load background sounds: {bgNoiseManifestError}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* First Intro Message */}
+            <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -2249,65 +2387,64 @@ export default function AssistantConfig() {
                   </Button>
                 </div>
               </CardContent>
-          </Card>
+            </Card>
 
-          {/* Dialing Data */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Dialing Data</CardTitle>
-              <CardDescription>Link exactly one dialing file to this assistant.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={linkedDialingFileId != null ? String(linkedDialingFileId) : "__none__"}
-                  onValueChange={(v) => {
-                    if (configLocked) return;
-                    setLinkedDialingFileId(v === "__none__" ? null : Number(v));
-                  }}
-                  disabled={configLocked || dialingFilesLoading}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder={dialingFilesLoading ? "Loading…" : "Select dialing file"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">None</SelectItem>
-                    {dialingFiles.map((f) => (
-                      <SelectItem key={f.id} value={String(f.id)}>
-                        {f.original_filename} ({f.row_count})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={() => saveDialingLink()}
-                  disabled={configLocked || savingDialingLink || !isDialingLinkDirty}
-                  size="sm"
-                  className="shrink-0"
-                >
-                  {savingDialingLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                </Button>
-              </div>
-              <div className="mt-2 text-xs text-muted-foreground">
-                Upload files in <Link to="/dialing-data" className="underline">Dialing Data</Link>.
-              </div>
-            </CardContent>
-          </Card>
+            {/* Dialing Data */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Dialing Data</CardTitle>
+                <CardDescription>Link exactly one dialing file to this assistant.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={linkedDialingFileId != null ? String(linkedDialingFileId) : "__none__"}
+                    onValueChange={(v) => {
+                      if (configLocked) return;
+                      setLinkedDialingFileId(v === "__none__" ? null : Number(v));
+                    }}
+                    disabled={configLocked || dialingFilesLoading}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder={dialingFilesLoading ? "Loading…" : "Select dialing file"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {dialingFiles.map((f) => (
+                        <SelectItem key={f.id} value={String(f.id)}>
+                          {f.original_filename} ({f.row_count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={() => saveDialingLink()}
+                    disabled={configLocked || savingDialingLink || !isDialingLinkDirty}
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    {savingDialingLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Upload files in <Link to="/dialing-data" className="underline">Dialing Data</Link>.
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Conversation Script — full detail, no blur */}
-          <div className="flex-1 flex flex-col min-h-0">
-            <Card className="flex-1 flex flex-col">
+            {/* Conversation Script — full detail, no blur */}
+            <Card>
               <CardHeader className="pb-3">
                 <CardTitle>Conversation Script</CardTitle>
                 <CardDescription>Conversation Script for the agent.</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col min-h-0">
+              <CardContent className="flex flex-col">
                 <Textarea
                   id="scriptText"
                   placeholder="Enter conversation script…"
                   value={scriptText}
                   onChange={(e) => setScriptText(e.target.value)}
-                  className="flex-1 min-h-[200px] resize-none text-sm font-mono leading-relaxed"
+                  className="min-h-[260px] md:min-h-[320px] resize-none text-sm font-mono leading-relaxed"
                   disabled={configLocked}
                 />
                 <div className="flex justify-end pt-3">
@@ -2319,172 +2456,24 @@ export default function AssistantConfig() {
               </CardContent>
             </Card>
           </div>
+          </div>
 
-          {/* Debug Log (collapsible) */}
-          <Collapsible>
+          {/* ── AUTOMATIONS ── */}
+          <div ref={automationsSectionRef} className="min-h-full flex flex-col pt-6" style={{ scrollMarginTop: 12 }}>
             <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="flex-row items-center justify-between space-y-0 cursor-pointer py-3">
-                    <div className="flex items-center">
-                      <ChevronDown className="h-4 w-4 mr-2 transition-transform [&[data-state=open]]:rotate-180" />
-                      <div>
-                        <CardTitle>Debug Log</CardTitle>
-                        <CardDescription>Raw WebSocket events.</CardDescription>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEvents([]); }}>Clear</Button>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="max-h-[300px] overflow-y-auto text-xs font-mono space-y-2 pr-2">
-                    <div className="flex items-center justify-between gap-2 pb-2">
-                      <label className="flex items-center gap-2 text-[11px] text-muted-foreground select-none">
-                        <input
-                          type="checkbox"
-                          className="h-3.5 w-3.5"
-                          checked={debugMode}
-                          onChange={(e) => setDebugMode(e.target.checked)}
-                        />
-                        Debug mode
-                      </label>
-                      <div className="text-[11px] text-muted-foreground">
-                        {debugMode ? "Enabled" : "Disabled"}
-                      </div>
-                    </div>
-                    {debugTurns.length === 0 ? (
-                      <div className="text-center py-4 text-muted-foreground">No debug turns yet.</div>
-                    ) : (
-                      <div className="space-y-3">
-                        {debugTurns.map((t) => (
-                          <div key={t.turnId} className="rounded border border-border/60 p-2">
-                            <div className="text-[11px] font-semibold text-foreground">Turn {t.turnId}</div>
-                            <div className="mt-2 space-y-1">
-                              {t.events.map((ev, idx) => (
-                                <div key={`${t.turnId}-${idx}`} className="flex items-baseline justify-between gap-3">
-                                  <div className="text-primary/80 truncate">{ev.stage}</div>
-                                  <div className="text-muted-foreground shrink-0">
-                                    {ev.lat && typeof ev.lat.prev === "number" ? `+${ev.lat.prev.toFixed(0)}ms` : ""}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Raw frames (optional) */}
-                    <details className="pt-2">
-                      <summary className="cursor-pointer text-muted-foreground">Raw events</summary>
-                      <div className="mt-2 space-y-2">
-                        {debugEvents.map((e) => (
-                          <div key={e.ts}>
-                            <span className="text-muted-foreground/50">{new Date(e.ts).toLocaleTimeString()}</span>
-                            <span className="text-primary/80 ml-2">{e.type}</span>
-                            <pre className="text-muted-foreground whitespace-pre-wrap break-all text-[10px] leading-relaxed">
-                              {JSON.stringify(e.payload, null, 2)}
-                            </pre>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  </CardContent>
-                </CollapsibleContent>
+              <CardHeader className="pb-3">
+                <CardTitle>Automations</CardTitle>
+                <CardDescription>Future workflow logic will live here.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex min-h-[320px] items-center justify-center rounded-md border border-dashed border-border bg-muted/20 px-6 text-center text-sm text-muted-foreground">
+                  No automations yet.
+                </div>
+              </CardContent>
             </Card>
-          </Collapsible>
-        </div>
-
-        {/* Right Column: Conversation (live/testing) */}
-        <div className="lg:col-span-1 flex flex-col min-h-0 order-last lg:order-none">
-          <Card className="flex-1 flex flex-col min-h-0">
-            <CardHeader>
-              <CardTitle>Conversation</CardTitle>
-              <CardDescription>Live conversation/testing area.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto pr-2">
-              <div className="space-y-4">
-                {chat.length === 0 && (
-                  <div className="text-center py-10 text-sm text-muted-foreground">
-                    No conversation yet. Start a call to begin.
-                  </div>
-                )}
-                {chat.map((turn) => (
-                  <div
-                    key={turn.id}
-                    className={`flex items-end gap-2 ${turn.speaker === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    {turn.speaker === "agent" && (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                        AI
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                        turn.speaker === "user"
-                          ? "bg-muted text-muted-foreground"
-                          : "bg-primary/10 border border-primary/20"
-                      }`}
-                    >
-                      {turn.text}
-                    </div>
-                    {turn.speaker === "user" && (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-sm font-semibold">
-                        U
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {partialUserText.trim() && (
-                  <div className="flex items-end gap-2 justify-end">
-                    <div className="max-w-[75%] rounded-lg px-3 py-2 text-sm bg-muted text-muted-foreground">
-                      <span className="opacity-80">{partialUserText}</span>
-                      <span className="opacity-60"> …</span>
-                    </div>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-sm font-semibold">
-                      U
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
-
-      {/* Call Flow Status Modal — only shown during warmup */}
-      <Dialog open={callFlowStatus === "warming" && wsStatus === "connected"}>
-        <DialogContent className="sm:max-w-[280px] [&>button]:hidden p-6">
-          <div className="flex flex-col items-center justify-center space-y-3 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-medium">Warming Up...</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-        </TabsContent>
-
-        <TabsContent
-          value="automation"
-          tabIndex={-1}
-          data-assistant-tab-content="automation"
-          className="mt-4 flex-1 min-h-0 outline-none"
-        >
-          <div className="flex h-full min-h-[240px] items-center justify-center rounded-md border border-dashed border-border bg-muted/20 px-6 text-center text-sm text-muted-foreground">
-            No automations configured yet.
-          </div>
-        </TabsContent>
-        <TabsContent
-          value="configurations"
-          tabIndex={-1}
-          data-assistant-tab-content="configurations"
-          className="mt-4 flex-1 min-h-0 outline-none"
-        >
-          <div className="flex h-full min-h-[240px] items-center justify-center rounded-md border border-dashed border-border bg-muted/20 px-6 text-center text-sm text-muted-foreground">
-            No configurations available yet.
-          </div>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
