@@ -48,6 +48,7 @@ type PaygCallRow = {
   end: string;
   duration: string;
   status: "Completed" | "Missed" | "In progress";
+  recording_status?: string | null;
 };
 
 async function exportToPdf(rows: PaygCallRow[], windowLabel: string): Promise<void> {
@@ -178,6 +179,8 @@ export default function PaygCalls() {
   const [window, setWindow] = useState<WindowKey>("day");
   const [search, setSearch] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [playingCallId, setPlayingCallId] = useState<number | null>(null);
+  const [playingUrl, setPlayingUrl] = useState<{ callId: number; url: string } | null>(null);
 
   const authed = isAuthenticated();
 
@@ -214,9 +217,23 @@ export default function PaygCalls() {
         end: fmtDateTime(end),
         duration: fmtDurationSeconds(durSeconds),
         status,
+        recording_status: c.recording_status ?? null,
       };
     });
   }, [calls]);
+
+  async function handlePlay(callId: number) {
+    setPlayingCallId(callId);
+    try {
+      const res = await api.dashboard.callRecordingUrl(callId);
+      if (!res?.url) throw new Error("Recording URL unavailable");
+      setPlayingUrl({ callId, url: res.url });
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to open recording"));
+    } finally {
+      setPlayingCallId(null);
+    }
+  }
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -361,10 +378,10 @@ export default function PaygCalls() {
                   <TableHead>Call</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Assistant</TableHead>
-                  <TableHead className="hidden md:table-cell">Session</TableHead>
                   <TableHead className="hidden lg:table-cell">Start</TableHead>
                   <TableHead className="hidden lg:table-cell">End</TableHead>
                   <TableHead>Duration</TableHead>
+                  <TableHead>Recording</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -387,10 +404,40 @@ export default function PaygCalls() {
                       <TableCell className="font-medium text-foreground">#{c.id}</TableCell>
                       <TableCell className="text-muted-foreground">{c.customer}</TableCell>
                       <TableCell className="text-muted-foreground">{c.assistant}</TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground font-mono">{c.session}</TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">{c.start}</TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">{c.end}</TableCell>
                       <TableCell className="text-muted-foreground">{c.duration}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {(() => {
+                          const recStatus = (c.recording_status || "").toLowerCase();
+                          const canPlay = recStatus === "available";
+                          const isPlayingHere = playingUrl?.callId === c.id;
+
+                          if (isPlayingHere) {
+                            return <audio className="h-8" controls autoPlay src={playingUrl?.url} />;
+                          }
+
+                          if (canPlay) {
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={playingCallId === c.id}
+                                onClick={() => handlePlay(c.id)}
+                                className="h-8 px-3"
+                              >
+                                {playingCallId === c.id ? "Opening…" : "Play"}
+                              </Button>
+                            );
+                          }
+
+                          if (c.recording_status) {
+                            return <span className="text-xs">{recStatus === "failed" ? "Failed" : "Processing"}</span>;
+                          }
+
+                          return <span className="text-xs">—</span>;
+                        })()}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{c.status}</TableCell>
                     </TableRow>
                   ))

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardCalls } from "@/hooks/use-dashboard-queries";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { DashboardWindow } from "@/hooks/use-dashboard-queries";
 import { getErrorMessage } from "@/lib/errors";
@@ -36,7 +37,10 @@ type CallRow = {
   session_id: string | null;
   start_time: string | null;
   end_time: string | null;
-  customer_number: number | null;
+  customer_number: string | number | null;
+  recording_id?: number | null;
+  recording_status?: string | null;
+  recording_duration_seconds?: number | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -217,6 +221,9 @@ export default function Calls() {
   const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
 
+  const [playingCallId, setPlayingCallId] = useState<number | null>(null);
+  const [playingUrl, setPlayingUrl] = useState<{ callId: number; url: string } | null>(null);
+
   const callsQ = useDashboardCalls(timeWindow, 500);
   const loadingInitial = callsQ.isPending;
   const isRefreshing = callsQ.isFetching && !callsQ.isPending;
@@ -289,6 +296,23 @@ export default function Calls() {
       });
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handlePlay(callId: number) {
+    setPlayingCallId(callId);
+    try {
+      const res = await api.dashboard.callRecordingUrl(callId);
+      if (!res?.url) throw new Error("Recording URL unavailable");
+      setPlayingUrl({ callId, url: res.url });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Recording",
+        description: getErrorMessage(err, "Failed to open recording"),
+      });
+    } finally {
+      setPlayingCallId(null);
     }
   }
 
@@ -407,7 +431,7 @@ export default function Calls() {
               <TableHead className="text-muted-foreground/80 font-semibold text-xs uppercase tracking-wider">Start</TableHead>
               <TableHead className="text-muted-foreground/80 font-semibold text-xs uppercase tracking-wider">End</TableHead>
               <TableHead className="text-muted-foreground/80 font-semibold text-xs uppercase tracking-wider">Status</TableHead>
-              <TableHead className="text-muted-foreground/80 font-semibold text-xs uppercase tracking-wider">Session</TableHead>
+              <TableHead className="text-muted-foreground/80 font-semibold text-xs uppercase tracking-wider">Recording</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -441,6 +465,9 @@ export default function Calls() {
               filteredCalls.map((call) => {
                 const sec = durationSeconds(call);
                 const hasEnded = !!call.end_time;
+                const recStatus = (call.recording_status || "").toLowerCase();
+                const canPlay = recStatus === "available";
+                const isPlayingHere = playingUrl?.callId === call.call_id;
                 return (
                   <TableRow key={call.call_id} className="border-border/20 hover:bg-muted/25 transition-colors group">
                     <TableCell>
@@ -456,7 +483,7 @@ export default function Calls() {
                     </TableCell>
 
                     <TableCell className="font-mono text-sm text-muted-foreground">
-                      {call.customer_number ?? "—"}
+                      {call.customer_number != null ? String(call.customer_number) : "—"}
                     </TableCell>
 
                     <TableCell>
@@ -483,9 +510,25 @@ export default function Calls() {
                     </TableCell>
 
                     <TableCell>
-                      <span className="font-mono text-[11px] text-muted-foreground truncate max-w-[160px] block group-hover:text-foreground transition-colors">
-                        {call.session_id ?? "—"}
-                      </span>
+                      {isPlayingHere ? (
+                        <audio className="h-8" controls autoPlay src={playingUrl?.url} />
+                      ) : canPlay ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={playingCallId === call.call_id}
+                          onClick={() => handlePlay(call.call_id)}
+                          className="h-8 px-3"
+                        >
+                          {playingCallId === call.call_id ? "Opening…" : "Play"}
+                        </Button>
+                      ) : call.recording_status ? (
+                        <span className="text-xs text-muted-foreground">
+                          {recStatus === "failed" ? "Failed" : "Processing"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

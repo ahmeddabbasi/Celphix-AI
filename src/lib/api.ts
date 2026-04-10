@@ -257,13 +257,19 @@ function makeDashboardApi(prefix: string) {
       ),
 
     calls: (window: DashboardWindow, limit = 200) =>
-      request<{ window: DashboardWindow; calls: Array<{ call_id: number; user_id: number | null; assistant_id: number | null; assistant_name: string | null; session_id: string | null; start_time: string | null; end_time: string | null; customer_number: number | null }> }>(
+      request<{ window: DashboardWindow; calls: Array<{ call_id: number; user_id: number | null; assistant_id: number | null; assistant_name: string | null; session_id: string | null; start_time: string | null; end_time: string | null; customer_number: string | number | null; recording_id?: number | null; recording_status?: string | null; recording_duration_seconds?: number | null }> }>(
         "GET",
         scopedPath(prefix, `/dashboard/calls?window=${window}&limit=${limit}`),
       ),
 
+    callRecordingUrl: (callId: number) =>
+      request<{ url: string; recording_id?: number | null; expires_s: number; bytes?: number | null; duration_seconds?: number | null }>(
+        "GET",
+        scopedPath(prefix, `/dashboard/calls/${callId}/recording-url`),
+      ),
+
     recentCalls: (limit = 50) =>
-      request<{ calls: Array<{ call_id: number; user_id: number | null; assistant_id: number | null; assistant_name: string | null; session_id: string | null; start_time: string | null; end_time: string | null; customer_number: number | null }> }>(
+      request<{ calls: Array<{ call_id: number; user_id: number | null; assistant_id: number | null; assistant_name: string | null; session_id: string | null; start_time: string | null; end_time: string | null; customer_number: string | number | null }> }>(
         "GET",
         scopedPath(prefix, `/dashboard/recent-calls?limit=${limit}`),
       ),
