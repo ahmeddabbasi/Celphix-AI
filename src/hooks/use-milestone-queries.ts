@@ -134,10 +134,10 @@ export function useActiveAssistants(): UseQueryResult<ActiveAssistantsResponse> 
         "/api/cc/dashboard/active-assistants"
       );
     },
-    staleTime: 1000 * 30, // 30 seconds (real-time data)
+    staleTime: 1000 * 2, // 2 seconds (near real-time)
     gcTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
-    refetchInterval: 1000 * 60, // Auto-refetch every minute for real-time feel
+    refetchInterval: 1000 * 5, // Poll every 5s so names drop quickly after call ends
   });
 }
 

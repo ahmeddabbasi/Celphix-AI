@@ -1,7 +1,6 @@
 /**
- * ActiveAssistants — donut chart of assistants currently on live calls.
- * Centre label is rendered as SVG <text> inside the chart — no DOM overlap hacks.
- * Data from /api/dashboard/active-assistants (refreshes every 60s).
+ * ActiveAssistants — list of assistants currently on live calls.
+ * Data from /api/dashboard/active-assistants (polled for near real-time).
  */
 
 import { Bot, Phone } from "lucide-react";
@@ -9,77 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAssistants } from "@/hooks/use-milestone-queries";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-
-const COLOR_ACTIVE = "#008613";
-const COLOR_IDLE = "hsl(var(--muted))";
-
-function CentreLabel({
-  viewBox,
-  count,
-}: {
-  viewBox?: { cx?: number; cy?: number };
-  count: number;
-}) {
-  const cx = viewBox?.cx ?? 0;
-  const cy = viewBox?.cy ?? 0;
-  return (
-    <>
-      <text
-        x={cx}
-        y={cy - 8}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        style={{ fontSize: 28, fontWeight: 700, fill: "hsl(var(--foreground))" }}
-      >
-        {count}
-      </text>
-      <text
-        x={cx}
-        y={cy + 16}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        style={{
-          fontSize: 11,
-          fill: "hsl(var(--muted-foreground))",
-          letterSpacing: "0.06em",
-        }}
-      >
-        {count === 1 ? "ON CALL" : "ON CALLS"}
-      </text>
-    </>
-  );
-}
-
-interface TooltipEntry {
-  name: string;
-  value: number;
-}
-function DonutTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: TooltipEntry[];
-}) {
-  if (!active || !payload?.length || payload[0].name === "Idle") return null;
-  return (
-    <div className="rounded-lg border border-border bg-popover px-3 py-1.5 text-xs shadow-md">
-      <span className="font-medium text-primary">{payload[0].value} live</span>
-    </div>
-  );
-}
 
 export function ActiveAssistants() {
   const { data, isLoading } = useActiveAssistants();
 
   const activeCount = data?.active_count ?? 0;
   const activeNames = data?.active_names ?? [];
-
-  const chartData =
-    activeCount > 0
-      ? [{ name: "On Call", value: activeCount }]
-      : [{ name: "Idle", value: 1 }];
 
   return (
     <Card>
@@ -101,50 +35,32 @@ export function ActiveAssistants() {
         <CardDescription>Assistants currently on live calls.</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col items-center gap-3 pb-5">
+      <CardContent className="flex flex-col gap-3 pb-5">
         {isLoading ? (
-          <Skeleton className="mt-2 h-40 w-40 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-8 w-full" />
+          </div>
         ) : (
           <>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={58}
-                  outerRadius={84}
-                  paddingAngle={0}
-                  dataKey="value"
-                  strokeWidth={0}
-                  labelLine={false}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  label={(props: any) => (
-                    <CentreLabel viewBox={props.viewBox} count={activeCount} />
-                  )}
-                >
-                  {chartData.map((entry, i) => (
-                    <Cell
-                      key={i}
-                      fill={entry.name === "On Call" ? COLOR_ACTIVE : COLOR_IDLE}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip content={<DonutTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-
             {activeCount > 0 ? (
-              <div className="flex flex-wrap justify-center gap-1.5">
+              <div className="flex w-full items-center gap-2 overflow-x-auto pb-1">
                 {activeNames.map((name, i) => (
-                  <Badge
+                  <div
                     key={i}
-                    variant="outline"
-                    className="bg-primary/10 border-primary/30 text-primary gap-1.5 text-xs"
+                    className="inline-flex shrink-0 items-center gap-3 rounded-full border border-border/50 bg-muted/20 px-3 py-2"
+                    title={name}
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    {name}
-                  </Badge>
+                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="max-w-[260px] truncate text-sm font-semibold leading-none text-foreground">
+                        {name}
+                      </span>
+                      <Badge variant="secondary" className="shrink-0">
+                        Active
+                      </Badge>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
