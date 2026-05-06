@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Phone, PhoneCall, Link2, Unlink, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -90,6 +90,7 @@ function RowEditor({
   number,
   numbers,
   assistants,
+  linkedAssistantIds,
   files,
   isSaving,
   onSave,
@@ -97,6 +98,7 @@ function RowEditor({
   number: TwilioNumber;
   numbers: TwilioNumber[];
   assistants: Assistant[];
+  linkedAssistantIds: Set<number>;
   files: DialingFile[];
   isSaving: boolean;
   onSave: (numberId: number, assistantId: number | null, fileId: number | null) => Promise<boolean>;
@@ -118,11 +120,14 @@ function RowEditor({
     setDraftFileValue(currentFileValue);
   }, [currentFileValue]);
 
-  const takenByOther = new Set(
-    numbers
-      .filter((n) => n.id !== number.id && n.assistant_id !== null)
-      .map((n) => n.assistant_id as number),
-  );
+  const takenByOther = useMemo(() => {
+    // Cross-provider conflict awareness:
+    // disable any assistant already linked to any number (Twilio/Vonage/Telnyx),
+    // except the one currently linked to this number.
+    const taken = new Set(linkedAssistantIds);
+    if (number.assistant_id != null) taken.delete(number.assistant_id);
+    return taken;
+  }, [linkedAssistantIds, number.assistant_id]);
 
   const isDirty = draftAssistantValue !== currentAssistantValue || draftFileValue !== currentFileValue;
 
@@ -674,6 +679,15 @@ export default function NumbersTwilio() {
   const [files, setFiles] = useState<DialingFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [linkingSaving, setLinkingSaving] = useState<number | null>(null);
+  const [otherLinkedAssistantIds, setOtherLinkedAssistantIds] = useState<Set<number>>(new Set());
+
+  const linkedAssistantIdsAll = useMemo(() => {
+    const ids = new Set<number>(otherLinkedAssistantIds);
+    for (const n of numbers) {
+      if (n.assistant_id != null) ids.add(n.assistant_id);
+    }
+    return ids;
+  }, [numbers, otherLinkedAssistantIds]);
 
   useEffect(() => {
     void loadData();
@@ -682,12 +696,23 @@ export default function NumbersTwilio() {
   async function loadData() {
     setLoading(true);
     try {
-      const [numRes, asstRes] = await Promise.all([
+      const [numRes, asstRes, vonageRes, telnyxRes] = await Promise.all([
         api.twilio.listNumbers(),
         api.dashboard.assistants(),
+        api.vonage.listNumbers().catch(() => ({ numbers: [] })),
+        api.telnyx.listNumbers().catch(() => ({ numbers: [] })),
       ]);
       setNumbers(numRes.numbers);
       setAssistants(asstRes.assistants);
+
+      const otherIds = new Set<number>();
+      for (const n of (vonageRes.numbers ?? []) as Array<{ assistant_id: number | null }>) {
+        if (n.assistant_id != null) otherIds.add(n.assistant_id);
+      }
+      for (const n of (telnyxRes.numbers ?? []) as Array<{ assistant_id: number | null }>) {
+        if (n.assistant_id != null) otherIds.add(n.assistant_id);
+      }
+      setOtherLinkedAssistantIds(otherIds);
 
       try {
         const filesRes = await api.dialingData.listFiles();
@@ -769,7 +794,7 @@ export default function NumbersTwilio() {
         </div>
         <AddNumberDialog
           assistants={assistants}
-          linkedAssistantIds={new Set(numbers.filter((n) => n.assistant_id !== null).map((n) => n.assistant_id as number))}
+          linkedAssistantIds={linkedAssistantIdsAll}
           onAdded={handleAdded}
         />
       </div>
@@ -818,6 +843,7 @@ export default function NumbersTwilio() {
                         number={num}
                         numbers={numbers}
                         assistants={assistants}
+                        linkedAssistantIds={linkedAssistantIdsAll}
                         files={files}
                         isSaving={linkingSaving === num.id}
                         onSave={handleSaveLinks}

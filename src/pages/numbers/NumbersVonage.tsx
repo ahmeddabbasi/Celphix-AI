@@ -43,7 +43,7 @@ import {
 import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/errors";
 
-type TelnyxNumber = {
+type VonageNumber = {
   id: number;
   user_id: number;
   phone_number: string;
@@ -79,21 +79,21 @@ function AddNumberDialog({
 }: {
   assistants: Assistant[];
   linkedAssistantIds: Set<number>;
-  onAdded: (num: TelnyxNumber) => void;
+  onAdded: (num: VonageNumber) => void;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    api_key: "",
-    connection_id: "",
+    application_id: "",
+    private_key: "",
     phone_number: "",
     label: "",
     assistant_id: "" as string,
   });
 
   function reset() {
-    setForm({ api_key: "", connection_id: "", phone_number: "", label: "", assistant_id: "" });
+    setForm({ application_id: "", private_key: "", phone_number: "", label: "", assistant_id: "" });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -105,14 +105,14 @@ function AddNumberDialog({
 
     setSaving(true);
     try {
-      const res = await api.telnyx.addNumber({
-        api_key: form.api_key.trim(),
-        connection_id: form.connection_id.trim(),
+      const res = await api.vonage.addNumber({
+        application_id: form.application_id.trim(),
+        private_key: form.private_key.trim(),
         phone_number: form.phone_number.trim(),
         label: form.label.trim() || null,
         assistant_id: Number(form.assistant_id),
       });
-      const number = res.number as TelnyxNumber;
+      const number = res.number as VonageNumber;
       onAdded(number);
       toast.success(`Number ${number.phone_number} added.`);
       setOpen(false);
@@ -141,40 +141,40 @@ function AddNumberDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add Telnyx Number</DialogTitle>
+            <DialogTitle>Add Vonage Number</DialogTitle>
             <DialogDescription>Credentials are encrypted at rest.</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-3 py-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="cc_telnyx_api_key">API Key</Label>
+              <Label htmlFor="cc_vonage_app_id">Application ID</Label>
               <Input
-                id="cc_telnyx_api_key"
-                type="password"
-                placeholder="Your Telnyx API key"
-                value={form.api_key}
-                onChange={(e) => setForm((f) => ({ ...f, api_key: e.target.value }))}
-                required
-                autoComplete="new-password"
-              />
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="cc_telnyx_connection_id">Connection ID</Label>
-              <Input
-                id="cc_telnyx_connection_id"
+                id="cc_vonage_app_id"
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                value={form.connection_id}
-                onChange={(e) => setForm((f) => ({ ...f, connection_id: e.target.value }))}
+                value={form.application_id}
+                onChange={(e) => setForm((f) => ({ ...f, application_id: e.target.value }))}
                 required
                 autoComplete="off"
               />
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor="cc_telnyx_phone">Phone Number (E.164)</Label>
+              <Label htmlFor="cc_vonage_private_key">Private Key</Label>
               <Input
-                id="cc_telnyx_phone"
+                id="cc_vonage_private_key"
+                type="password"
+                placeholder="-----BEGIN PRIVATE KEY-----"
+                value={form.private_key}
+                onChange={(e) => setForm((f) => ({ ...f, private_key: e.target.value }))}
+                required
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label htmlFor="cc_vonage_phone">Phone Number (E.164)</Label>
+              <Input
+                id="cc_vonage_phone"
                 placeholder="+15550001234"
                 value={form.phone_number}
                 onChange={(e) => setForm((f) => ({ ...f, phone_number: e.target.value }))}
@@ -183,9 +183,9 @@ function AddNumberDialog({
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor="cc_telnyx_label">Label</Label>
+              <Label htmlFor="cc_vonage_label">Label</Label>
               <Input
-                id="cc_telnyx_label"
+                id="cc_vonage_label"
                 placeholder="e.g. Sales line, Support…"
                 value={form.label}
                 onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
@@ -193,12 +193,12 @@ function AddNumberDialog({
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor="cc_telnyx_assistant">Linked Assistant</Label>
+              <Label htmlFor="cc_vonage_assistant">Linked Assistant</Label>
               <Select
                 value={form.assistant_id || "__none__"}
                 onValueChange={(v) => setForm((f) => ({ ...f, assistant_id: v === "__none__" ? "" : v }))}
               >
-                <SelectTrigger id="cc_telnyx_assistant">
+                <SelectTrigger id="cc_vonage_assistant">
                   <SelectValue placeholder="Select an assistant…" />
                 </SelectTrigger>
                 <SelectContent>
@@ -250,7 +250,7 @@ function StartCallDialog({
   number,
   disabled,
 }: {
-  number: TelnyxNumber;
+  number: VonageNumber;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -261,7 +261,7 @@ function StartCallDialog({
     e.preventDefault();
     setCalling(true);
     try {
-      await api.telnyx.startCall(number.id, toNumber.trim());
+      await api.vonage.startCall(number.id, toNumber.trim());
       toast.success("Call started.");
       setOpen(false);
       setToNumber("");
@@ -297,9 +297,9 @@ function StartCallDialog({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-1.5">
-              <Label htmlFor={`cc_telnyx_to_${number.id}`}>Destination Number (E.164)</Label>
+              <Label htmlFor={`cc_vonage_to_${number.id}`}>Destination Number (E.164)</Label>
               <Input
-                id={`cc_telnyx_to_${number.id}`}
+                id={`cc_vonage_to_${number.id}`}
                 placeholder="+15559876543"
                 value={toNumber}
                 onChange={(e) => setToNumber(e.target.value)}
@@ -412,8 +412,8 @@ function DialerToggleButton({
   );
 }
 
-export default function NumbersTelnyx() {
-  const [numbers, setNumbers] = useState<TelnyxNumber[]>([]);
+export default function NumbersVonage() {
+  const [numbers, setNumbers] = useState<VonageNumber[]>([]);
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   const [linkedAssistantIds, setLinkedAssistantIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -432,36 +432,36 @@ export default function NumbersTelnyx() {
   async function loadData() {
     setLoading(true);
     try {
-      const [telnyxRes, asstRes, twilioRes, vonageRes] = await Promise.all([
-        api.telnyx.listNumbers(),
+      const [vonageRes, asstRes, twilioRes, telnyxRes] = await Promise.all([
+        api.vonage.listNumbers(),
         api.dashboard.assistants(),
         api.twilio.listNumbers().catch(() => ({ numbers: [] })),
-        api.vonage.listNumbers().catch(() => ({ numbers: [] })),
+        api.telnyx.listNumbers().catch(() => ({ numbers: [] })),
       ]);
 
-      const telnyxNumbers = (telnyxRes.numbers ?? []) as TelnyxNumber[];
-      setNumbers(telnyxNumbers);
+      const vonageNumbers = (vonageRes.numbers ?? []) as VonageNumber[];
+      setNumbers(vonageNumbers);
       setAssistants((asstRes.assistants ?? []) as Assistant[]);
 
       const ids = new Set<number>();
       for (const n of (twilioRes.numbers ?? []) as Array<{ assistant_id: number | null }>) {
         if (n.assistant_id != null) ids.add(n.assistant_id);
       }
-      for (const n of (vonageRes.numbers ?? []) as Array<{ assistant_id: number | null }>) {
+      for (const n of (telnyxRes.numbers ?? []) as Array<{ assistant_id: number | null }>) {
         if (n.assistant_id != null) ids.add(n.assistant_id);
       }
-      for (const n of telnyxNumbers) {
+      for (const n of vonageNumbers) {
         if (n.assistant_id != null) ids.add(n.assistant_id);
       }
       setLinkedAssistantIds(ids);
     } catch (err) {
-      toast.error(getErrorMessage(err, "Failed to load Telnyx numbers."));
+      toast.error(getErrorMessage(err, "Failed to load Vonage numbers."));
     } finally {
       setLoading(false);
     }
   }
 
-  function handleAdded(num: TelnyxNumber) {
+  function handleAdded(num: VonageNumber) {
     setNumbers((prev) => [num, ...prev]);
     if (num.assistant_id != null) {
       setLinkedAssistantIds((prev) => new Set(prev).add(num.assistant_id as number));
@@ -470,7 +470,7 @@ export default function NumbersTelnyx() {
 
   async function handleDelete(id: number) {
     try {
-      const res = await api.telnyx.deleteNumber(id);
+      const res = await api.vonage.deleteNumber(id);
       setNumbers((prev) => prev.filter((n) => n.id !== id));
       if (res?.unlinked_assistant?.name) {
         toast.success(`Number removed. Assistant "${res.unlinked_assistant.name}" has been unlinked.`);
@@ -486,8 +486,8 @@ export default function NumbersTelnyx() {
   async function handleLinkAssistant(numberId: number, assistantId: number | null) {
     setSavingLinkId(numberId);
     try {
-      const res = await api.telnyx.linkAssistant(numberId, assistantId);
-      const updated = res.number as TelnyxNumber;
+      const res = await api.vonage.linkAssistant(numberId, assistantId);
+      const updated = res.number as VonageNumber;
       setNumbers((prev) => prev.map((n) => (n.id === numberId ? updated : n)));
       toast.success("Saved.");
       await loadData();
@@ -502,7 +502,7 @@ export default function NumbersTelnyx() {
     <div className="space-y-[clamp(1.25rem,2.4vw,2.25rem)]">
       <div data-reveal className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-h1 text-foreground">Numbers · Telnyx</h1>
+          <h1 className="font-display text-h1 text-foreground">Numbers · Vonage</h1>
         </div>
         <AddNumberDialog assistants={assistants} linkedAssistantIds={linkedAssistantIds} onAdded={handleAdded} disabled={loading} />
       </div>
@@ -511,7 +511,7 @@ export default function NumbersTelnyx() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Phone className="h-4 w-4 text-muted-foreground" />
-            Your Telnyx Numbers
+            Your Vonage Numbers
           </CardTitle>
           <CardDescription>Each assistant can only be linked to one number at a time.</CardDescription>
         </CardHeader>
@@ -522,7 +522,7 @@ export default function NumbersTelnyx() {
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-sm text-muted-foreground">
               <Phone className="h-8 w-8 opacity-30" />
               <span>
-                No Telnyx numbers yet. Click <strong>Add Number</strong> to get started.
+                No Vonage numbers yet. Click <strong>Add Number</strong> to get started.
               </span>
             </div>
           ) : (

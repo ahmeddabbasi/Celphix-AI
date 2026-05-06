@@ -443,6 +443,26 @@ export default function PaygNumbersTwilio() {
     refetchOnWindowFocus: true,
   });
 
+  const vonageQ = useQuery({
+    queryKey: ["payg", "vonage", "numbers"],
+    queryFn: () => api.vonage.listNumbers(),
+    enabled: authed,
+    placeholderData: keepPreviousData,
+    staleTime: 20_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const telnyxQ = useQuery({
+    queryKey: ["payg", "telnyx", "numbers"],
+    queryFn: () => api.telnyx.listNumbers(),
+    enabled: authed,
+    placeholderData: keepPreviousData,
+    staleTime: 20_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+  });
+
   const rows: TwilioNumber[] = useMemo(
     () => (data?.numbers ?? []) as TwilioNumber[],
     [data?.numbers],
@@ -451,10 +471,18 @@ export default function PaygNumbersTwilio() {
     () => (assistantsQ.data?.assistants ?? []) as Assistant[],
     [assistantsQ.data?.assistants],
   );
-  const linkedAssistantIds = useMemo(
-    () => new Set(rows.filter((n) => n.assistant_id != null).map((n) => n.assistant_id as number)),
-    [rows],
-  );
+  const linkedAssistantIds = useMemo(() => {
+    const ids = new Set<number>();
+    const add = (list: Array<{ assistant_id: number | null }> | undefined) => {
+      for (const n of list ?? []) {
+        if (n.assistant_id != null) ids.add(n.assistant_id);
+      }
+    };
+    add(rows);
+    add((vonageQ.data?.numbers ?? []) as Array<{ assistant_id: number | null }>);
+    add((telnyxQ.data?.numbers ?? []) as Array<{ assistant_id: number | null }>);
+    return ids;
+  }, [rows, telnyxQ.data?.numbers, vonageQ.data?.numbers]);
 
   function handleAdded(num: TwilioNumber) {
     // Fast local update + eventual refetch.

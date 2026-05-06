@@ -13,8 +13,6 @@ import { ActivityTrendsChart } from "@/components/dashboard/ActivityTrendsChart"
 import { ActiveAssistants } from "@/components/dashboard/ActiveAssistants";
 import { Dialing } from "@/components/dashboard/Dialing";
 import { TopPerformers } from "@/components/dashboard/TopPerformers";
-import { LiveSupervision } from "@/components/dashboard/LiveSupervision";
-import { useUserProfile } from "@/hooks/use-user-profile";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,8 +94,6 @@ export default function Dashboard() {
 
   const summaryQ    = useDashboardSummary(window);
   const assistantsQ = useDashboardAssistantsKpis(window);
-  const profileQ = useUserProfile();
-  const isAdmin = Boolean(profileQ.data?.is_admin);
 
   const summary    = (summaryQ.data ?? null) as DashboardSummaryResponse | null;
   const assistants = useMemo(
@@ -166,8 +162,6 @@ export default function Dashboard() {
           <Dialing />
         </div>
       </div>
-
-      {isAdmin ? <LiveSupervision enabled /> : null}
 
       {/* ── Top performers + Activity trends ───────────────────────────── */}
       <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3 lg:gap-6">

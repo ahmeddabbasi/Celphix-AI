@@ -43,6 +43,8 @@ const navItems = [
 
 const numbersItems = [
   { title: "Twilio", url: "/numbers/twilio" },
+  { title: "Vonage", url: "/numbers/vonage" },
+  { title: "Telnyx", url: "/numbers/telnyx" },
 ];
 
 export function AppSidebar() {

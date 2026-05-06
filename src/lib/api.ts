@@ -431,6 +431,106 @@ function makeTwilioApi(prefix: string) {
   };
 }
 
+function makeVonageApi(prefix: string) {
+  return {
+    listNumbers: () =>
+      request<{
+        numbers: Array<{
+          id: number;
+          user_id: number;
+          interface_type?: string;
+          phone_number: string;
+          label: string | null;
+          assistant_id: number | null;
+          assistant_name: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        }>;
+      }>("GET", scopedPath(prefix, "/vonage/numbers")),
+
+    addNumber: (body: {
+      application_id: string;
+      private_key: string;
+      phone_number: string;
+      label: string | null;
+      assistant_id: number | null;
+    }) =>
+      request<{ number: unknown }>("POST", scopedPath(prefix, "/vonage/numbers"), body),
+
+    deleteNumber: (numberId: number) =>
+      request<{
+        ok: boolean;
+        unlinked_assistant: { id: number; name: string | null } | null;
+      }>("DELETE", scopedPath(prefix, `/vonage/numbers/${numberId}`)),
+
+    linkAssistant: (numberId: number, assistantId: number | null) =>
+      request<{ number: unknown }>(
+        "PATCH",
+        scopedPath(prefix, `/vonage/numbers/${numberId}/assistant`),
+        { assistant_id: assistantId },
+      ),
+
+    startCall: (numberId: number, toNumber: string) =>
+      request<{
+        ok: boolean;
+        call_uuid?: string;
+        session_id: string;
+        to: string;
+        from: string;
+      }>("POST", scopedPath(prefix, `/vonage/numbers/${numberId}/call`), { to_number: toNumber }),
+  };
+}
+
+function makeTelnyxApi(prefix: string) {
+  return {
+    listNumbers: () =>
+      request<{
+        numbers: Array<{
+          id: number;
+          user_id: number;
+          interface_type?: string;
+          phone_number: string;
+          label: string | null;
+          assistant_id: number | null;
+          assistant_name: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        }>;
+      }>("GET", scopedPath(prefix, "/telnyx/numbers")),
+
+    addNumber: (body: {
+      api_key: string;
+      connection_id: string;
+      phone_number: string;
+      label: string | null;
+      assistant_id: number | null;
+    }) =>
+      request<{ number: unknown }>("POST", scopedPath(prefix, "/telnyx/numbers"), body),
+
+    deleteNumber: (numberId: number) =>
+      request<{
+        ok: boolean;
+        unlinked_assistant: { id: number; name: string | null } | null;
+      }>("DELETE", scopedPath(prefix, `/telnyx/numbers/${numberId}`)),
+
+    linkAssistant: (numberId: number, assistantId: number | null) =>
+      request<{ number: unknown }>(
+        "PATCH",
+        scopedPath(prefix, `/telnyx/numbers/${numberId}/assistant`),
+        { assistant_id: assistantId },
+      ),
+
+    startCall: (numberId: number, toNumber: string) =>
+      request<{
+        ok: boolean;
+        call_control_id?: string;
+        session_id: string;
+        to: string;
+        from: string;
+      }>("POST", scopedPath(prefix, `/telnyx/numbers/${numberId}/call`), { to_number: toNumber }),
+  };
+}
+
 function makeDialerApi(prefix: string) {
   return {
     start: (assistantId: number) =>
@@ -633,6 +733,8 @@ export const api = {
   },
 
   twilio: makeTwilioApi(CC_PREFIX),
+  vonage: makeVonageApi(CC_PREFIX),
+  telnyx: makeTelnyxApi(CC_PREFIX),
 
   dialer: makeDialerApi(CC_PREFIX),
 };
@@ -644,6 +746,8 @@ export const paygApi = {
   // and is accessed via separate hooks/components).
   dashboard: makeDashboardApi(PAYG_PREFIX),
   twilio: makeTwilioApi(PAYG_PREFIX),
+  vonage: makeVonageApi(PAYG_PREFIX),
+  telnyx: makeTelnyxApi(PAYG_PREFIX),
   dialer: makeDialerApi(PAYG_PREFIX),
   dialingData: makeDialingDataApi(PAYG_PREFIX),
 };

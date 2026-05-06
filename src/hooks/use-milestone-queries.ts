@@ -48,6 +48,15 @@ export interface ActiveAssistantsResponse {
   active_count: number;
   active_names: string[];
   latest_call_start: string | null;
+  active_calls?: ActiveCall[];
+}
+
+export interface ActiveCall {
+  call_id: number;
+  assistant_id: number | null;
+  assistant_name: string;
+  session_id: string | null;
+  call_started_at: string | null;
 }
 
 export interface SessionInfoResponse {
