@@ -1,10 +1,23 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { PhoneOff, RefreshCw } from "lucide-react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { voices } from "@/data/voices";
@@ -107,6 +120,16 @@ function AssistantCard({ a }: { a: AssistantStat }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Assistants() {
+  // ─── [PLACEHOLDER] ADD ASSISTANT REQUEST ───────────────────────────────
+  // UI-only placeholder for requesting additional assistants.
+  // Remove this block entirely when backend request flow is available.
+  const { toast } = useToast();
+  const [addOpen, setAddOpen] = useState(false);
+  const [assistantCount, setAssistantCount] = useState<number>(1);
+  const [requestComment, setRequestComment] = useState("");
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  // ─────────────────────────────────────────────────────────────────────
+
   const { data, isPending, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["assistants", "with-stats"],
     queryFn: () => api.dashboard.assistantsWithStats(),
@@ -132,16 +155,87 @@ export default function Assistants() {
               : "No quota assigned — contact your admin"}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isPending || isFetching}
-          className="gap-2"
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-          {isRefreshing ? "Refreshing…" : "Refresh"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* ─── [PLACEHOLDER] ADD ASSISTANT BUTTON (UI ONLY) ───────────────── */}
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setAddOpen(true)}
+            className="gap-2 px-5 py-2 text-base font-bold text-white shadow-md"
+          >
+            Add Assistant
+          </Button>
+
+          {/* Dialog (placeholder) */}
+          <Dialog open={addOpen} onOpenChange={(v) => setAddOpen(v)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Request Additional Assistants</DialogTitle>
+                <DialogDescription>
+                  Submit a request to your admin to provision more assistants. This is a UI-only placeholder.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setIsSubmittingRequest(true);
+                  setTimeout(() => {
+                    setIsSubmittingRequest(false);
+                    setAddOpen(false);
+                    setAssistantCount(1);
+                    setRequestComment("");
+                    toast({ title: "Request submitted", description: "Request submitted, will be reviewed by admin" });
+                  }, 400);
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <Label>Number of assistants</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={assistantCount}
+                    onChange={(ev) => setAssistantCount(Math.max(1, Number(ev.target.value || 1)))}
+                  />
+                </div>
+
+                <div>
+                  <Label>Comment / Clause</Label>
+                  <Textarea
+                    value={requestComment}
+                    onChange={(ev) => setRequestComment(ev.target.value)}
+                    placeholder="Optional note to admin"
+                    className="min-h-[100px]"
+                  />
+                </div>
+
+                <DialogFooter>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isSubmittingRequest}>
+                      {isSubmittingRequest ? "Submitting…" : "Submit Request"}
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+          {/* ───────────────────────────────────────────────────────────────── */}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isPending || isFetching}
+            className="gap-2"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            {isRefreshing ? "Refreshing…" : "Refresh"}
+          </Button>
+        </div>
       </div>
 
       {/* ── Error ───────────────────────────────────────────────────────── */}
