@@ -2374,7 +2374,7 @@ export default function AssistantConfig() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="e.g. Hi, I'm Mark from Pathburn — the first AI-powered truck dispatcher. How are you today?"
+                  placeholder="e.g. Hi, I'm Mark from XYZ, the first AI-powered System. How are you today?"
                   value={introMessage}
                   onChange={(e) => setIntroMessage(e.target.value)}
                   className="min-h-[80px] resize-none text-sm"
