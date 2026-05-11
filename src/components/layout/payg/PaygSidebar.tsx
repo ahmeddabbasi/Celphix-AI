@@ -81,7 +81,7 @@ export function PaygSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-2.5 py-3.5">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -96,8 +96,8 @@ export function PaygSidebar() {
                       to={item.url}
                       end={item.url === "/payg"}
                       className={cn(
-                        "flex items-center rounded-[12px] py-2 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-200 ease-out hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-                        collapsed ? "justify-center px-0" : "gap-3 px-3",
+                        "flex min-h-[36px] items-center rounded-[12px] py-1.5 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                        collapsed ? "justify-center px-0" : "gap-2 px-3",
                       )}
                       activeClassName="bg-sidebar-primary/40 text-sidebar-primary-foreground"
                     >
@@ -130,8 +130,8 @@ export function PaygSidebar() {
                     setNumbersExpanded(!numbersExpanded);
                   }}
                   className={cn(
-                    "flex items-center rounded-[12px] py-2 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-200 ease-out hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-                    collapsed ? "justify-center px-0" : "gap-3 px-3",
+                    "flex min-h-[36px] items-center rounded-[12px] py-1.5 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                    collapsed ? "justify-center px-0" : "gap-2 px-3",
                   )}
                 >
                   <Hash className="h-4 w-4 shrink-0" />
@@ -157,7 +157,7 @@ export function PaygSidebar() {
               </SidebarMenuItem>
 
               {!collapsed && numbersExpanded && (
-                <div className="ml-6 mt-1 space-y-1">
+                <div className="ml-6 mt-1.5 space-y-1">
                   {numbersItems.map((n) => (
                     <SidebarMenuItem key={n.url}>
                       <SidebarMenuButton
@@ -167,10 +167,10 @@ export function PaygSidebar() {
                       >
                         <NavLink
                           to={n.url}
-                          className="flex items-center gap-3 rounded-[12px] px-3 py-2 text-sm font-semibold text-sidebar-foreground/80 transition-[background-color,color] duration-200 ease-out hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground"
+                          className="flex min-h-[36px] items-center gap-2 rounded-[12px] px-3 py-1.5 text-sm font-semibold text-sidebar-foreground/80 transition-[background-color,color] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground"
                           activeClassName="bg-sidebar-primary/40 text-sidebar-primary-foreground"
                         >
-                          <span className="text-[10px] w-4 text-center">•</span>
+                          <span className="text-[0.625rem] w-4 text-center">•</span>
                           <span>{n.title}</span>
                         </NavLink>
                       </SidebarMenuButton>
@@ -183,13 +183,13 @@ export function PaygSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/40 p-4">
-        <div className="space-y-3">
+      <SidebarFooter className="border-t border-sidebar-border/40 p-3">
+        <div className="space-y-2">
           <button
             onClick={() => navigate("/payg/settings")}
             title="Settings"
               className={
-              "w-full flex items-center gap-3 rounded-[12px] px-2 py-1.5 transition-[background-color,color] duration-200 ease-out font-semibold text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground " +
+              "w-full flex min-h-[36px] items-center gap-2 rounded-[12px] px-2.5 py-1.5 transition-[background-color,color] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] font-semibold text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground " +
               (location.pathname === "/payg/settings" ? "bg-sidebar-primary/40 text-sidebar-primary-foreground" : "")
             }
           >

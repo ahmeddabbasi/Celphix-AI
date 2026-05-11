@@ -94,9 +94,9 @@ export function OptimizedCallingCrmTable({ data }: { data: CallingCrmRow[] }) {
     {
       id: "customername",
       label: "Customer Name",
-      minWidth: "min-w-[180px]",
+      minWidth: "min-w-[11.25rem]",
       render: (row) => (
-        <div className="truncate max-w-[180px] font-medium" title={row.customername}>
+        <div className="truncate max-w-[11.25rem] font-medium" title={row.customername}>
           {row.customername || "—"}
         </div>
       ),

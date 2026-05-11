@@ -206,9 +206,9 @@ function LineGraphSkeleton() {
   // Pre-defined heights so it looks like real data, not a flat rectangle
   const bars = [28, 52, 38, 70, 44, 85, 60, 48, 76, 55, 40, 65, 50, 72, 36, 80, 58, 45, 68, 53];
   return (
-    <div className="w-full h-[300px] flex flex-col gap-2">
+    <div className="w-full h-[18.75rem] flex flex-col gap-2">
       {/* Chart area */}
-      <div className="flex-1 flex items-end gap-[3px] px-1">
+      <div className="flex-1 flex items-end gap-[0.1875rem] px-1">
         {bars.map((h, i) => (
           <div
             key={i}
@@ -238,7 +238,7 @@ function PieChartSkeleton() {
         <div className="absolute inset-0 m-auto w-20 h-20 rounded-full bg-card" />
       </div>
       {/* Legend rows */}
-      <div className="flex flex-col gap-2 w-full max-w-[180px]">
+      <div className="flex flex-col gap-2 w-full max-w-[11.25rem]">
         {[80, 60, 100, 70, 50].map((w, i) => (
           <div key={i} className="flex items-center gap-2">
             <Skeleton className="w-2.5 h-2.5 rounded-full shrink-0" />
@@ -295,7 +295,7 @@ export function AnalyticsDashboardSkeleton() {
           <Skeleton className="h-9 w-40 mb-2" />
           <Skeleton className="h-4 w-72" />
         </div>
-        <Skeleton className="h-10 w-[280px]" />
+        <Skeleton className="h-10 w-[17.5rem]" />
       </div>
 
       {/* KPI Cards */}

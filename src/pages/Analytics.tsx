@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 /** Ghost line-chart: faded axes + a flat dashed line + label */
 function EmptyLineChart() {
   return (
-    <div className="h-[300px] flex flex-col items-center justify-center gap-3 select-none">
+    <div className="h-[18.75rem] flex flex-col items-center justify-center gap-3 select-none">
       <svg width="260" height="160" viewBox="0 0 260 160" className="opacity-25">
         {/* Y axis */}
         <line x1="30" y1="10" x2="30" y2="130" stroke="currentColor" strokeWidth="1.5" />
@@ -75,7 +75,7 @@ function EmptyLineChart() {
 /** Ghost donut: faded full ring + centre hole + label */
 function EmptyPieChart() {
   return (
-    <div className="h-[260px] flex flex-col items-center justify-center gap-3 select-none">
+    <div className="h-[16.25rem] flex flex-col items-center justify-center gap-3 select-none">
       <div className="relative w-32 h-32 opacity-20">
         <div className="w-full h-full rounded-full border-[20px] border-dashed border-muted-foreground" />
         <div className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-card" />
@@ -172,7 +172,7 @@ function DateRangePicker({ dateRange, onChange }: DateRangePickerProps) {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
+        <Button variant="outline" className="w-[17.5rem] justify-start text-left font-normal">
           <CalendarIcon className="mr-2 h-4 w-4" />
           {label}
         </Button>
@@ -366,11 +366,11 @@ export default function Analytics() {
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    fontSize: "12px",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.75rem",
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: "12px" }} />
+                <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
                 {assistantSeries.map((s, i) => (
                   <Line
                     key={s.assistant_id}
@@ -423,8 +423,8 @@ export default function Analytics() {
                       contentStyle={{
                         backgroundColor: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                        fontSize: "12px",
+                        borderRadius: "0.5rem",
+                        fontSize: "0.75rem",
                       }}
                     />
                   </PieChart>
@@ -438,7 +438,7 @@ export default function Analytics() {
                           className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                           style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
                         />
-                        <span className="truncate max-w-[120px]">{row.label}</span>
+                        <span className="truncate max-w-[7.5rem]">{row.label}</span>
                       </div>
                       <span className="text-muted-foreground ml-2">
                         {row.count} ({row.percentage.toFixed(1)}%)
@@ -479,7 +479,7 @@ export default function Analytics() {
                         <td className="px-4 py-2">
                           <RankBadge rank={row.rank} />
                         </td>
-                        <td className="px-4 py-2 font-medium truncate max-w-[140px]">
+                        <td className="px-4 py-2 font-medium truncate max-w-[8.75rem]">
                           {row.assistant_name}
                         </td>
                         <td className="px-4 py-2 text-right">{row.total_calls.toLocaleString()}</td>

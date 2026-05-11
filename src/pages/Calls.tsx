@@ -5,7 +5,6 @@ import {
   PhoneCall,
   Clock,
   CalendarDays,
-  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -366,16 +365,7 @@ export default function Calls() {
             Live
           </button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => callsQ.refetch()}
-            disabled={loadingInitial || isRefreshing}
-            className="gap-1.5"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-            Refresh
-          </Button>
+          {/* Manual refresh removed — polling + auto-refetch remain active */}
 
           <Button
             variant="outline"
@@ -499,7 +489,7 @@ export default function Calls() {
                       <Badge
                         variant="outline"
                         className={cn(
-                          "text-[11px] font-medium px-2 py-0.5 border",
+                          "text-[0.6875rem] font-medium px-2 py-0.5 border",
                           hasEnded
                             ? "border-primary/30 bg-primary/10 text-primary"
                             : "border-accent/30 bg-accent/10 text-accent-foreground",

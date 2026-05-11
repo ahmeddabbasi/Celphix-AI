@@ -60,7 +60,7 @@ function speakerName(speaker_id: string | null): string {
 
 function StatPill({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-1.5 text-[11px] text-primary/80">
+    <div className="flex items-center gap-1.5 text-[0.6875rem] text-primary/80">
       {icon}
       <span>{label}</span>
     </div>
@@ -168,11 +168,11 @@ function AssistantCard({ a }: { a: PaygAssistant }) {
 
       <div className="space-y-2">
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-[0.6875rem] text-muted-foreground">
             <Mic className="h-3 w-3" />
             <span className="truncate">{voice}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-[0.6875rem] text-muted-foreground">
             <Phone className="h-3 w-3" />
             {a.linked_number ? (
               <span className="truncate">
@@ -400,7 +400,7 @@ export default function PaygAssistants() {
           </div>
 
           {!isPending && assistants.some((a) => a.is_in_call) ? (
-            <Badge className="bg-primary/15 text-primary border-primary/40 text-[11px] py-0 px-2">
+            <Badge className="bg-primary/15 text-primary border-primary/40 text-[0.6875rem] py-0 px-2">
               {assistants.filter((a) => a.is_in_call).length} live
             </Badge>
           ) : null}

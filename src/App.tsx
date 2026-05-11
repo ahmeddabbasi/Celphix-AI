@@ -8,7 +8,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PaygLayout } from "@/components/layout/payg/PaygLayout";
 import { ProtectedRoute, CCProtectedRoute } from "@/components/ProtectedRoute";
 import { useInactivityTimeout } from "@/hooks/use-inactivity-timeout";
-import { clearAuthToken } from "@/lib/auth";
+import { clearAuthToken, initializeDevelopmentMode } from "@/lib/auth";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // ── Command Center pages ───────────────────────────────────────────────────────
@@ -60,6 +60,11 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   useInactivityTimeout();
+
+  useEffect(() => {
+    // Initialize development mode (if enabled via VITE_DEV_MODE=true)
+    initializeDevelopmentMode();
+  }, []);
 
   useEffect(() => {
     // Strict branding lock: never append page names/suffixes.

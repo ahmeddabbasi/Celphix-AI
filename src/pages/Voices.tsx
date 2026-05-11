@@ -147,7 +147,7 @@ export default function Voices() {
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filters
               {activeFilterCount > 0 && (
-                <Badge className="h-4 min-w-4 px-1 text-[10px] ml-0.5">
+                <Badge className="h-4 min-w-4 px-1 text-[0.625rem] ml-0.5">
                   {activeFilterCount}
                 </Badge>
               )}

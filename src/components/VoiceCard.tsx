@@ -33,7 +33,7 @@ function GenderAvatarIcon({ gender }: { gender: string }) {
     <div className="relative">
       <UserRound className="h-5 w-5" />
       {mark ? (
-        <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-background/80 border border-border px-1 text-[10px] font-semibold leading-none text-muted-foreground">
+        <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-background/80 border border-border px-1 text-[0.625rem] font-semibold leading-none text-muted-foreground">
           {mark}
         </span>
       ) : null}
@@ -97,13 +97,13 @@ export function VoiceCard({ voice }: VoiceCardProps) {
         <div className="flex flex-wrap gap-1.5">
           <Badge
             variant="outline"
-            className={`text-[11px] px-2 py-0 h-5 font-medium border ${accentClass}`}
+            className={`text-[0.6875rem] px-2 py-0 h-5 font-medium border ${accentClass}`}
           >
             {voice.accent}
           </Badge>
           <Badge
             variant="outline"
-            className={`text-[11px] px-2 py-0 h-5 font-medium border ${genderClass}`}
+            className={`text-[0.6875rem] px-2 py-0 h-5 font-medium border ${genderClass}`}
           >
             {voice.gender}
           </Badge>

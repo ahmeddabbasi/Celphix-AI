@@ -230,7 +230,7 @@ export default function PaygAnalytics() {
             ) : lineChartData.length === 0 ? (
               <p className="text-sm text-muted-foreground">No analytics data yet.</p>
             ) : (
-              <div className="h-[300px]">
+              <div className="h-[18.75rem]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={lineChartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -258,7 +258,7 @@ export default function PaygAnalytics() {
             ) : eventDistribution.length === 0 ? (
               <p className="text-sm text-muted-foreground">No events yet.</p>
             ) : (
-              <div className="h-[300px]">
+              <div className="h-[18.75rem]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie

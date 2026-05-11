@@ -1,8 +1,16 @@
 /**
  * Authentication utilities for handling JWT tokens and session management
+ * 
+ * Supports both production authentication and development-only auth bypass.
+ * Development mode is controlled via environment variables:
+ * - VITE_DEV_MODE: enables frontend-only authentication bypass
+ * - VITE_USE_MOCK_API: uses mock API responses instead of real backend
  */
 
 import { getApiUrl } from "@/lib/api";
+import { devConfig } from "@/lib/dev/dev-config";
+import { devAuth } from "@/lib/dev/dev-auth";
+import { apiProxy } from "@/lib/dev/dev-api-proxy";
 
 export interface AuthData {
   access_token: string;
@@ -42,8 +50,20 @@ export function getUsername(): string | null {
 
 /**
  * Check if user is authenticated
+ * 
+ * In development mode (VITE_DEV_MODE=true):
+ * - Always returns true (bypass all auth checks)
+ * 
+ * In production:
+ * - Returns true only if a valid token exists
  */
 export function isAuthenticated(): boolean {
+  // Dev mode: always authenticated
+  if (devConfig.isDevMode()) {
+    return true;
+  }
+
+  // Production: check for token
   const token = getAuthToken();
   return !!token;
 }
@@ -135,9 +155,32 @@ export function getAuthHeaders(): Record<string, string> {
 
 /**
  * Create authenticated fetch wrapper.
- * On 401: attempts one silent refresh via HttpOnly cookie before redirecting.
+ * 
+ * Features:
+ * - Injects Authorization header
+ * - On 401: attempts one silent refresh via HttpOnly cookie before redirecting
+ * - In dev mode: routes to mock or real API based on VITE_USE_MOCK_API
  */
 export async function authenticatedFetch(
+  url: string,
+  options: RequestInit & { _isRetry?: boolean } = {}
+): Promise<Response> {
+  // In dev mode, use API proxy to route to mock or real API
+  if (devConfig.isDevMode()) {
+    const realFetch = async () => makeAuthenticatedFetchRequest(url, options);
+    return apiProxy.interceptRequest(url, options, realFetch);
+  }
+
+  // Production: make real API call
+  return makeAuthenticatedFetchRequest(url, options);
+}
+
+/**
+ * Internal: Make the actual authenticated fetch request
+ * This is extracted to a separate function so it can be used by both
+ * production code and the API proxy in development mode.
+ */
+async function makeAuthenticatedFetchRequest(
   url: string,
   options: RequestInit & { _isRetry?: boolean } = {}
 ): Promise<Response> {
@@ -206,3 +249,40 @@ export async function googleSignIn(credential: string): Promise<string> {
   }
 }
 
+/**
+ * Initialize development mode (if enabled)
+ * 
+ * Call this once during app startup to set up:
+ * - Mock authentication session
+ * - Development configuration logging
+ * - API proxy logging
+ * 
+ * Safe to call in production - checks devConfig first
+ * 
+ * Usage in App.tsx:
+ * ```
+ * useEffect(() => {
+ *   initializeDevelopmentMode();
+ * }, []);
+ * ```
+ */
+export function initializeDevelopmentMode(): void {
+  if (!devConfig.isDevMode()) {
+    return;
+  }
+
+  console.group("%c🚀 Celphix - Development Mode", "color: #FF6B6B; font-size: 16px; font-weight: bold");
+
+  // Initialize mock auth session
+  devAuth.initDevSession();
+
+  // Log configuration
+  devConfig.logConfig();
+  apiProxy.logConfig();
+
+  console.log(
+    "%c✅ Development mode initialized. To disable, set VITE_DEV_MODE=false in .env.development",
+    "color: #51CF66; font-style: italic"
+  );
+  console.groupEnd();
+}

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { RefreshCw, Trash2, Upload } from "lucide-react";
+import { Trash2, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -318,16 +318,6 @@ export default function DialingData() {
           <h1 className="text-2xl font-bold tracking-tight">Dialing Data</h1>
           <p className="text-muted-foreground">Upload CSVs and link one file to each assistant.</p>
         </div>
-
-        <Button
-          variant="outline"
-          onClick={() => filesQ.refetch()}
-          disabled={filesQ.isFetching}
-          className="gap-2"
-        >
-          <RefreshCw className={"h-4 w-4 " + (filesQ.isFetching ? "animate-spin" : "")} />
-          Refresh
-        </Button>
       </div>
 
       <Card>

@@ -76,8 +76,20 @@
 
     --radius: 0.5rem;
 
-    /* Fixed topbar height for layout offsetting */
-    --topbar-h: 64px;
+    /* Global UI scale baseline (matches 70% design density at 100% browser zoom) */
+    --ui-scale: 0.7;
+
+    /* Fixed shell dimensions (rem-based for global scaling) */
+    --topbar-h: 4rem;
+    --sidebar-w: 15rem;
+    --sidebar-w-collapsed: 4rem;
+    --sidebar-w-mobile: 18rem;
+    --nav-item-height: 2.25rem;
+    --nav-item-gap: 0.5rem;
+
+    /* Global shell rhythm */
+    --app-gap: 1.5rem;
+    --container-padding: 2rem;
 
     /* ── Editorial rhythm + motion primitives (palette-safe) ─────────── */
     --space-macro: clamp(64px, 10vw, 120px);
@@ -202,7 +214,7 @@
 
   @media (max-width: 767px) {
     :root {
-      --topbar-h: 56px;
+      --topbar-h: 3.5rem;
     }
   }
 }
@@ -213,6 +225,7 @@
   }
 
   html {
+    font-size: 70%;
     font-family: "DM Sans", "Inter", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -268,7 +281,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 clamp(16px, 3vw, 40px);
+    padding: 0 clamp(1.2rem, 3vw, 2.5rem);
     background: hsl(var(--background));
     z-index: 1000;
     box-sizing: border-box;
@@ -284,7 +297,7 @@
   }
 
   .topbar__logo-img {
-    height: clamp(32px, 4vw, 40px);
+    height: clamp(2rem, 4vw, 3rem);
     width: auto;
     display: block;
     object-fit: contain;
@@ -295,7 +308,7 @@
   .topbar__actions {
     display: flex;
     align-items: center;
-    gap: clamp(8px, 1.5vw, 20px);
+    gap: clamp(0.8rem, 1.5vw, 1.8rem);
     flex-shrink: 0;
     min-width: 0;
   }
@@ -317,7 +330,7 @@
   }
 
   .header-logo {
-    height: clamp(28px, 4vw, 40px);
+    height: clamp(1.75rem, 4vw, 2.75rem);
     width: auto;
     display: block;
     object-fit: contain;

@@ -65,7 +65,7 @@ function ActionTakenBadge({ action }: { action: "approve" | "reject" }) {
     return (
       <Badge
         variant="outline"
-        className="mt-2 gap-1 border-primary/40 text-primary text-[10px] font-medium"
+        className="mt-2 gap-1 border-primary/40 text-primary text-[0.625rem] font-medium"
       >
         <CheckCircle className="h-2.5 w-2.5" /> Approved
       </Badge>
@@ -73,7 +73,7 @@ function ActionTakenBadge({ action }: { action: "approve" | "reject" }) {
   return (
     <Badge
       variant="outline"
-      className="mt-2 gap-1 border-red-500/40 text-red-600 text-[10px] font-medium"
+      className="mt-2 gap-1 border-red-500/40 text-red-600 text-[0.625rem] font-medium"
     >
       <XCircle className="h-2.5 w-2.5" /> Rejected
     </Badge>
@@ -133,13 +133,13 @@ function NotifRow({
           >
             {n.title}
           </p>
-          <span className="shrink-0 text-[10px] text-muted-foreground">
+          <span className="shrink-0 text-[0.625rem] text-muted-foreground">
             {timeAgo(n.created_at)}
           </span>
         </div>
 
         {n.body && (
-          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground line-clamp-2">
+          <p className="mt-0.5 text-[0.6875rem] leading-snug text-muted-foreground line-clamp-2">
             {n.body}
           </p>
         )}
@@ -153,7 +153,7 @@ function NotifRow({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-6 px-2 text-[11px] border-primary/40 text-primary hover:bg-primary/10"
+                  className="h-6 px-2 text-[0.6875rem] border-primary/40 text-primary hover:bg-primary/10"
                   disabled={isReviewing}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -165,7 +165,7 @@ function NotifRow({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-6 px-2 text-[11px] border-red-500/40 text-red-600 hover:bg-red-500/10"
+                  className="h-6 px-2 text-[0.6875rem] border-red-500/40 text-red-600 hover:bg-red-500/10"
                   disabled={isReviewing}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -265,7 +265,7 @@ export function NotificationPanel({
           <Bell className={"h-4 w-4 " + (triggerIconClassName ?? "text-muted-foreground")} />
           {unreadCount > 0 && (
             <span
-              className={`absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${badgeColor}`}
+              className={`absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[0.5625rem] font-bold ${badgeColor}`}
             >
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
@@ -281,7 +281,7 @@ export function NotificationPanel({
             <span className="text-sm font-semibold">Notifications</span>
             {unreadCount > 0 && (
               <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${badgeColor}`}
+                className={`rounded-full px-1.5 py-0.5 text-[0.625rem] font-bold ${badgeColor}`}
               >
                 {unreadCount}
               </span>
@@ -309,7 +309,7 @@ export function NotificationPanel({
         </div>
 
         {/* ── List ───────────────────────────────────────────────────────── */}
-        <ScrollArea className="max-h-[420px]">
+        <ScrollArea className="max-h-[26.25rem]">
           {isLoading ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground text-sm">
               Loading…

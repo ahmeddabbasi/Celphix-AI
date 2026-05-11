@@ -74,7 +74,7 @@ export function PaygPlaceholder({ title, subtitle, Icon }: PaygPlaceholderProps)
             <p className="text-sm text-muted-foreground">Overview and recent activity.</p>
 
             <div className="rounded-md border border-border">
-              <div className="grid grid-cols-3 gap-3 border-b border-border bg-muted/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground">
+              <div className="grid grid-cols-3 gap-3 border-b border-border bg-muted/30 px-3 py-2 text-[0.6875rem] font-semibold text-muted-foreground">
                 <span>Item</span>
                 <span>Status</span>
                 <span className="text-right">Updated</span>

@@ -21,6 +21,7 @@ import { api, getWsUrl, paygApi } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { callSession } from "@/lib/callSession";
 import { getErrorMessage } from "@/lib/errors";
+import { cn } from "@/lib/utils";
 import { WsSignalHud } from "@/components/WsSignalHud";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -153,6 +154,41 @@ export default function AssistantConfig() {
     } finally {
       setSavingName(false);
     }
+  }
+
+  // ── AUTOMATIONS STATE ──
+  // Call Routing
+  const [routingNumber, setRoutingNumber] = useState("");
+  const [routingLogic, setRoutingLogic] = useState<"Time" | "Text">("Time");
+  const [routingTimeFrom, setRoutingTimeFrom] = useState(0);
+  const [routingTimeTo, setRoutingTimeTo] = useState(5);
+  const [routingTextInstructions, setRoutingTextInstructions] = useState("");
+
+  // Call Outcomes
+  const [selectedOutcomes, setSelectedOutcomes] = useState<string[]>([]);
+  const outcomeOptions = ["Customer Name", "Age", "Email", "Account Details", "Medical History", "Lead Concerns"];
+
+  const jsonPreview = selectedOutcomes.reduce((acc, curr) => ({
+    ...acc,
+    [curr.toLowerCase().replace(/ /g, "_")]: "---",
+  }), {});
+
+  // Add Context for Call
+  const [contextSource, setContextSource] = useState("FreeQuoter Site");
+  const [selectedContextFields, setSelectedContextFields] = useState<string[]>([]);
+  const contextFieldOptions = ["Customer Name", "Age", "Medical Conditions", "Location", "Insurance Type"];
+
+  const contextPreview = selectedContextFields.reduce((acc, curr) => ({
+    ...acc,
+    [curr.toLowerCase().replace(/ /g, "_")]: "---",
+  }), {});
+
+  function toggleOutcome(option: string) {
+    setSelectedOutcomes((prev) => prev.includes(option) ? prev.filter((o) => o !== option) : [...prev, option]);
+  }
+
+  function toggleContextField(option: string) {
+    setSelectedContextFields((prev) => prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]);
   }
 
   // (Active tab & showDebug were part of an earlier UI iteration; not used in current layout.)
@@ -2116,7 +2152,7 @@ export default function AssistantConfig() {
           </button>
         </div>
 
-        <div ref={sectionsScrollContainerRef} className="mt-4 flex-1 min-h-0 overflow-y-auto">
+        <div ref={sectionsScrollContainerRef} className="mt-0 flex-1 min-h-0 overflow-y-auto">
           {/* ── TEST ── */}
           <div ref={testSectionRef} className="flex flex-col" style={{ scrollMarginTop: 12 }}>
             <Card className="h-[520px] md:h-[580px] lg:h-[620px] flex flex-col">
@@ -2206,7 +2242,7 @@ export default function AssistantConfig() {
 
             {/* Call Flow Status Modal — only shown during warmup */}
             <Dialog open={callFlowStatus === "warming" && wsStatus === "connected"}>
-              <DialogContent className="sm:max-w-[280px] [&>button]:hidden p-6">
+              <DialogContent className="sm:max-w-[17.5rem] [&>button]:hidden p-6">
                 <div className="flex flex-col items-center justify-center space-y-3 text-center">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="text-sm font-medium">Warming Up...</p>
@@ -2216,7 +2252,7 @@ export default function AssistantConfig() {
           </div>
 
           {/* ── CONFIGURATIONS ── */}
-          <div ref={configurationsSectionRef} className="min-h-full flex flex-col pt-6" style={{ scrollMarginTop: 12 }}>
+          <div ref={configurationsSectionRef} className="w-full flex flex-col pt-6" style={{ scrollMarginTop: 12 }}>
             <div className="flex flex-col gap-4 min-h-0">
             {/* Top Section: Voice settings + Background noise settings */}
             <div className="grid gap-4 md:grid-cols-2">
@@ -2341,13 +2377,13 @@ export default function AssistantConfig() {
                     </div>
 
                     {bgNoiseLocked && (
-                      <div className="mt-2 text-[11px] text-muted-foreground">
+                      <div className="mt-2 text-[0.6875rem] text-muted-foreground">
                         Locked during active call.
                       </div>
                     )}
 
                     {!!bgNoiseManifestError && (
-                      <div className="mt-2 text-[11px] text-red-600">
+                      <div className="mt-2 text-[0.6875rem] text-red-600">
                         Failed to load background sounds: {bgNoiseManifestError}
                       </div>
                     )}
@@ -2434,11 +2470,17 @@ export default function AssistantConfig() {
 
             {/* Conversation Script — full detail, no blur */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Conversation Script</CardTitle>
-                <CardDescription>Conversation Script for the agent.</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
+                <div className="min-w-0">
+                  <CardTitle>Conversation Script</CardTitle>
+                  <CardDescription>Conversation Script for the agent.</CardDescription>
+                </div>
+                <Button onClick={() => saveAgent()} disabled={configLocked || saving || !isDirty} size="sm" className="shrink-0">
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Save Script
+                </Button>
               </CardHeader>
-              <CardContent className="flex flex-col">
+              <CardContent className="pt-0">
                 <Textarea
                   id="scriptText"
                   placeholder="Enter conversation script…"
@@ -2447,27 +2489,206 @@ export default function AssistantConfig() {
                   className="min-h-[260px] md:min-h-[320px] resize-none text-sm font-mono leading-relaxed"
                   disabled={configLocked}
                 />
-                <div className="flex justify-end pt-3">
-                  <Button onClick={() => saveAgent()} disabled={configLocked || saving || !isDirty} size="sm">
-                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save Script
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </div>
           </div>
 
           {/* ── AUTOMATIONS ── */}
-          <div ref={automationsSectionRef} className="min-h-full flex flex-col pt-6" style={{ scrollMarginTop: 12 }}>
-            <Card>
+          <div ref={automationsSectionRef} className="w-full flex flex-col pt-0 pb-0 space-y-4" style={{ scrollMarginTop: 12 }}>
+            <div className="w-full">
+              <h2 className="text-3xl font-extrabold leading-tight mb-2">Automations</h2>
+            </div>
+
+            {/* ── CALL ROUTING CARD ── */}
+            <Card className="border border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle>Automations</CardTitle>
-                <CardDescription>Future workflow logic will live here.</CardDescription>
+                <CardTitle className="text-lg font-bold">Call Routing</CardTitle>
+                <CardDescription className="text-sm font-medium">Route calls based on time windows or text conditions.</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex min-h-[320px] items-center justify-center rounded-md border border-dashed border-border bg-muted/20 px-6 text-center text-sm text-muted-foreground">
-                  No automations yet.
+              <CardContent className="space-y-4 pl-3">
+                {/* Route to Number */}
+                <div className="space-y-2 pl-2">
+                  <label className="text-sm font-semibold">Route to Number</label>
+                  <Input
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={routingNumber}
+                    onChange={(e) => setRoutingNumber(e.target.value)}
+                    className="py-1.5 text-sm"
+                  />
+                </div>
+
+                {/* Routing Logic Selector */}
+                <div className="space-y-2 pl-2">
+                  <label className="text-sm font-semibold">Routing Logic</label>
+                  <Select value={routingLogic} onValueChange={(v) => setRoutingLogic(v as "Time" | "Text")}>
+                    <SelectTrigger className="py-1.5 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Time">Time-based</SelectItem>
+                      <SelectItem value="Text">Text-based</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* CONDITIONAL: Time-based Routing */}
+                {routingLogic === "Time" && (
+                  <div className="space-y-3 rounded-md bg-muted/30 p-3 border border-border/50">
+                    <p className="text-sm font-semibold text-muted-foreground">Time Window Configuration</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold">After (minutes)</label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={routingTimeFrom}
+                          onChange={(e) => setRoutingTimeFrom(Math.max(0, parseInt(e.target.value) || 0))}
+                          className="py-1.5 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold">Until (minutes)</label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={routingTimeTo}
+                          onChange={(e) => setRoutingTimeTo(Math.max(0, parseInt(e.target.value) || 0))}
+                          className="py-1.5 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground italic">
+                      Route to number if call duration is between {routingTimeFrom}–{routingTimeTo} minutes.
+                    </p>
+                  </div>
+                )}
+
+                {/* CONDITIONAL: Text-based Routing */}
+                {routingLogic === "Text" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold">Routing Instructions</label>
+                    <Textarea
+                      placeholder='e.g., "Route if customer mentions billing, account, or manager."
+Route if sentiment is negative or frustrated.'
+                      value={routingTextInstructions}
+                      onChange={(e) => setRoutingTextInstructions(e.target.value)}
+                      className="py-1.5 text-sm min-h-[80px]"
+                    />
+                    <p className="text-sm text-muted-foreground">Define natural language triggers for routing decisions.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ── CALL OUTCOMES CARD ── */}
+            <Card className="border border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-bold">Call Outcomes</CardTitle>
+                <CardDescription className="text-sm font-medium">Select data points to extract from calls.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pl-3">
+                {/* Outcome Selector */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Select Outcomes to Extract</label>
+                  <div className="grid grid-cols-2 gap-2 p-3 rounded-md border border-border/50 bg-muted/20 max-h-[160px] overflow-y-auto">
+                    {outcomeOptions.map((option) => (
+                      <label key={option} className="flex items-center gap-2 cursor-pointer py-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedOutcomes.includes(option)}
+                          onChange={() => toggleOutcome(option)}
+                          className="w-4 h-4 rounded border border-input cursor-pointer"
+                        />
+                        <span className="text-sm">{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* JSON Preview */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">JSON Preview</label>
+                  <pre className="bg-slate-900 text-slate-50 p-3 rounded-md border border-border/50 text-xs font-mono overflow-x-auto max-h-[180px] overflow-y-auto">
+                    {JSON.stringify(jsonPreview, null, 2)}
+                  </pre>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ── ADD CONTEXT FOR CALL CARD ── */}
+            <Card className="border border-border/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <CardTitle className="text-lg font-bold">Add Context for Call</CardTitle>
+                    <CardDescription className="text-sm font-medium">
+                      Extract live call details for real-time lookup on a reference site.
+                    </CardDescription>
+                  </div>
+                  <div
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted text-[0.6875rem] font-semibold text-muted-foreground"
+                    title="Extracts these details to provide real-time site context."
+                    aria-label="Extracts these details to provide real-time site context."
+                  >
+                    i
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 pl-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2 pl-2">
+                    <label className="text-sm font-semibold">Reference Site/Source</label>
+                    <Select value={contextSource} onValueChange={setContextSource}>
+                      <SelectTrigger className="py-1.5 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="FreeQuoter Site">FreeQuoter Site</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 pl-2">
+                    <label className="text-sm font-semibold">Data to Extract for Search</label>
+                    <div className="grid grid-cols-2 gap-2 rounded-md border border-border/50 bg-muted/20 p-3">
+                      {contextFieldOptions.map((option) => {
+                        const selected = selectedContextFields.includes(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => toggleContextField(option)}
+                            className={cn(
+                              "flex items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm transition-colors",
+                              selected
+                                ? "border-primary/50 bg-primary/10 text-foreground"
+                                : "border-border/50 bg-background/80 text-muted-foreground hover:bg-muted"
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "h-3 w-3 rounded-full border",
+                                selected ? "border-primary bg-primary" : "border-input bg-background"
+                              )}
+                            />
+                            <span className="leading-tight">{option}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-border/50 bg-slate-950 px-3 py-2">
+                  <div className="mb-2 flex items-center justify-between gap-2 text-xs text-slate-400">
+                    <span className="font-medium uppercase tracking-wide">Context Preview</span>
+                    <span>{contextSource}</span>
+                  </div>
+                  <pre className="overflow-x-auto font-mono text-xs leading-5 text-slate-100">
+                    {JSON.stringify({ source: contextSource, fields: contextPreview }, null, 2)}
+                  </pre>
                 </div>
               </CardContent>
             </Card>

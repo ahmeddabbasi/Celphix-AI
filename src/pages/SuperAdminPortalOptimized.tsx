@@ -606,25 +606,25 @@ export default function SuperAdminPortal() {
                       <TableCell>
                         {user.is_admin ? (
                           <div className="flex flex-col gap-1">
-                            <Badge variant="secondary" className="w-fit text-[10px]">Pay-As-You-Go</Badge>
-                            <Badge variant="default" className="w-fit text-[10px]">Command Center</Badge>
+                            <Badge variant="secondary" className="w-fit text-[0.625rem]">Pay-As-You-Go</Badge>
+                            <Badge variant="default" className="w-fit text-[0.625rem]">Command Center</Badge>
                           </div>
                         ) : user.command_center_access ? (
                           <div className="flex flex-col gap-1">
-                            <Badge variant="secondary" className="w-fit text-[10px]">Pay-As-You-Go</Badge>
-                            <Badge variant="default" className="w-fit text-[10px] bg-primary hover:bg-primary">Command Center</Badge>
+                            <Badge variant="secondary" className="w-fit text-[0.625rem]">Pay-As-You-Go</Badge>
+                            <Badge variant="default" className="w-fit text-[0.625rem] bg-primary hover:bg-primary">Command Center</Badge>
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1">
-                            <Badge variant="secondary" className="w-fit text-[10px]">Pay-As-You-Go</Badge>
+                            <Badge variant="secondary" className="w-fit text-[0.625rem]">Pay-As-You-Go</Badge>
                             {user.cc_request_status === "pending" && (
-                              <Badge variant="outline" className="w-fit text-[10px] border-accent/40 text-accent-foreground">CC Pending</Badge>
+                              <Badge variant="outline" className="w-fit text-[0.625rem] border-accent/40 text-accent-foreground">CC Pending</Badge>
                             )}
                             {user.cc_request_status === "rejected" && (
-                              <Badge variant="outline" className="w-fit text-[10px] border-red-500/40 text-red-600">CC Rejected</Badge>
+                              <Badge variant="outline" className="w-fit text-[0.625rem] border-red-500/40 text-red-600">CC Rejected</Badge>
                             )}
                             {user.cc_request_status === "revoked" && (
-                              <Badge variant="outline" className="w-fit text-[10px] border-red-600/60 text-red-700 bg-red-50">CC Revoked</Badge>
+                              <Badge variant="outline" className="w-fit text-[0.625rem] border-red-600/60 text-red-700 bg-red-50">CC Revoked</Badge>
                             )}
                           </div>
                         )}

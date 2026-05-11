@@ -45,7 +45,7 @@ function PerformerRow({
         <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </p>
         <p className="truncate text-sm font-semibold text-foreground">{name}</p>
@@ -53,7 +53,7 @@ function PerformerRow({
       <div className="text-right shrink-0">
         <p className="text-base font-bold tabular-nums text-foreground">{stat}</p>
         {rank === 1 && (
-          <p className="text-[10px] text-muted-foreground">#1</p>
+          <p className="text-[0.625rem] text-muted-foreground">#1</p>
         )}
       </div>
     </div>

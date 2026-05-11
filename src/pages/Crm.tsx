@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +59,7 @@ function LeadNotesCell({ lead }: { lead: CrmLead }) {
         className="min-h-8 h-8 resize-none text-xs"
         disabled={mut.isPending}
       />
-      <div className="h-4 text-[11px] text-muted-foreground">
+      <div className="h-4 text-[0.6875rem] text-muted-foreground">
         {mut.isPending ? "Saving…" : dirty ? "Unsaved" : ""}
       </div>
     </div>
@@ -107,20 +105,7 @@ export default function Crm() {
           <h1 className="text-2xl font-bold tracking-tight">CRM</h1>
           <p className="text-muted-foreground">View your leads. Use Dialing Data to upload dialing CSVs.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
-            <Link to="/dialing-data">Dialing Data</Link>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => leadsQ.refetch()}
-            disabled={leadsQ.isFetching}
-            className="gap-2"
-          >
-            <RefreshCw className={"h-4 w-4 " + (leadsQ.isFetching ? "animate-spin" : "")} />
-            Refresh
-          </Button>
-        </div>
+        {/* header actions removed: Dialing Data shortcut and manual Refresh control */}
       </div>
 
       <Card>

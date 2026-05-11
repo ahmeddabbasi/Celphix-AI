@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { PhoneOff, RefreshCw } from "lucide-react";
+import { PhoneOff } from "lucide-react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -97,17 +97,17 @@ function AssistantCard({ a }: { a: AssistantStat }) {
 
         <div className="mt-auto space-y-1.5">
           <div className="rounded-lg border border-border/30 bg-muted/20 px-2.5 py-1.5">
-            <p className="text-[11px] text-muted-foreground truncate group-hover:text-foreground/90">
+            <p className="text-[0.6875rem] text-muted-foreground truncate group-hover:text-foreground/90">
               {voice}
             </p>
           </div>
           <div className="rounded-lg border border-border/30 bg-muted/20 px-2.5 py-1.5">
-            <p className="text-[11px] text-muted-foreground truncate group-hover:text-foreground/90">
+            <p className="text-[0.6875rem] text-muted-foreground truncate group-hover:text-foreground/90">
               {linkedNumber}
             </p>
           </div>
           <div className="rounded-lg border border-border/30 bg-muted/20 px-2.5 py-1.5">
-            <p className="text-[11px] text-muted-foreground truncate group-hover:text-foreground/90">
+            <p className="text-[0.6875rem] text-muted-foreground truncate group-hover:text-foreground/90">
               {sheetName}
             </p>
           </div>
@@ -130,7 +130,7 @@ export default function Assistants() {
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   // ─────────────────────────────────────────────────────────────────────
 
-  const { data, isPending, isFetching, isError, error, refetch } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     queryKey: ["assistants", "with-stats"],
     queryFn: () => api.dashboard.assistantsWithStats(),
     placeholderData: keepPreviousData,
@@ -141,7 +141,6 @@ export default function Assistants() {
 
   const assistants: AssistantStat[] = data?.assistants ?? [];
   const quota = data?.quota ?? 0;
-  const isRefreshing = isFetching && !isPending;
 
   return (
     <div className="space-y-[clamp(1.25rem,2.4vw,2.25rem)]">
@@ -225,16 +224,6 @@ export default function Assistants() {
           </Dialog>
           {/* ───────────────────────────────────────────────────────────────── */}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isPending || isFetching}
-            className="gap-2"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-            {isRefreshing ? "Refreshing…" : "Refresh"}
-          </Button>
         </div>
       </div>
 
@@ -258,7 +247,7 @@ export default function Assistants() {
           </div>
 
           {!isPending && assistants.some((a) => a.is_in_call) ? (
-            <Badge className="bg-primary/15 text-primary border-primary/40 text-[11px] py-0 px-2">
+            <Badge className="bg-primary/15 text-primary border-primary/40 text-[0.6875rem] py-0 px-2">
               {assistants.filter((a) => a.is_in_call).length} live
             </Badge>
           ) : null}
