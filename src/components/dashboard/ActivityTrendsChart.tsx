@@ -83,16 +83,16 @@ export function ActivityTrendsChart() {
           </div>
 
           {/* Period pills */}
-          <div className="inline-flex rounded-lg border border-border bg-muted p-1 gap-1 shrink-0">
+          <div className="inline-flex rounded-[16px] p-1 gap-1 shrink-0">
             {PERIODS.map((p) => (
               <button
                 key={p.days}
                 onClick={() => setDays(p.days)}
                 className={cn(
-                  "rounded-md px-3 py-1 text-xs font-medium transition-all",
+                  "rounded-[12px] px-3 py-1 text-xs font-semibold transition-[transform,background-color,color,box-shadow] duration-300 ease-spring active:scale-[0.97]",
                   days === p.days
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20"
+                    : "bg-primary text-primary-foreground/90 hover:opacity-80 transition-opacity",
                 )}
               >
                 {p.label}

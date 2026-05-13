@@ -13,11 +13,14 @@ import type { DashboardWindow } from "@/hooks/use-dashboard-queries";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDuration(seconds: number | null | undefined): string {
-  if (!seconds || Number.isNaN(seconds)) return "—";
-  if (seconds < 60) return `${Math.round(seconds)}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.round(seconds % 60);
-  return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+  if (seconds === null || seconds === undefined || Number.isNaN(seconds)) return "—";
+  const s = Math.max(0, Math.round(seconds));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  if (hrs > 0) return `${hrs}h ${mins.toString().padStart(2, "0")}m`;
+  if (mins > 0) return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+  return `${secs}s`;
 }
 
 function assistantName(a: AssistantRow): string {

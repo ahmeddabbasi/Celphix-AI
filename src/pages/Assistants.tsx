@@ -70,20 +70,19 @@ function AssistantCard({ a }: { a: AssistantStat }) {
         "group relative cursor-pointer overflow-hidden rounded-2xl",
         "bg-card shadow-sm",
         "h-40 sm:h-44",
-        "p-3 sm:p-3.5",
-        "transition-all duration-200 ease-spring",
+        "p-4 sm:p-5",
+        "transition-all duration-300 ease-spring",
         a.is_active
-          ? "border border-[#214226]/60 ring-1 ring-[#214226]/15 hover:border-[#214226] hover:ring-2 hover:ring-[#214226]/25"
-          : "border border-[#ffea00]/60 ring-1 ring-[#ffea00]/15 hover:border-[#ffea00] hover:ring-2 hover:ring-[#ffea00]/25",
-        "hover:shadow-md",
-        "hover:-translate-y-0.5",
+          ? "border-2 border-[#214226]/20 bg-gradient-to-b from-[#214226]/5 to-transparent hover:border-[#214226] hover:shadow-lg hover:shadow-[#214226]/10"
+          : "border-2 border-[#ffea00]/30 bg-gradient-to-b from-[#ffea00]/10 to-transparent hover:border-[#ffea00] hover:shadow-lg hover:shadow-[#ffea00]/20",
+        "hover:-translate-y-1",
         "active:translate-y-0 active:shadow-sm",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
       )}
     >
       <div
         className={cn(
-          "absolute inset-x-0 top-0 h-0.5",
+          "absolute inset-x-0 top-0 h-1.5 transition-colors",
           a.is_active ? "bg-[#214226]" : "bg-[#ffea00]",
         )}
       />
@@ -95,19 +94,19 @@ function AssistantCard({ a }: { a: AssistantStat }) {
           </p>
         </div>
 
-        <div className="mt-auto space-y-1.5">
-          <div className="rounded-lg border border-border/30 bg-muted/20 px-2.5 py-1.5">
-            <p className="text-[0.6875rem] text-muted-foreground truncate group-hover:text-foreground/90">
+        <div className="mt-auto space-y-2">
+          <div className="rounded-md border border-[#214226]/10 bg-[#214226]/5 px-2.5 py-1">
+            <p className="text-[0.6875rem] font-semibold text-[#214226] truncate">
               {voice}
             </p>
           </div>
-          <div className="rounded-lg border border-border/30 bg-muted/20 px-2.5 py-1.5">
-            <p className="text-[0.6875rem] text-muted-foreground truncate group-hover:text-foreground/90">
+          <div className="rounded-md border border-[#214226]/10 bg-[#214226]/5 px-2.5 py-1">
+            <p className="text-[0.6875rem] font-semibold text-[#214226] truncate">
               {linkedNumber}
             </p>
           </div>
-          <div className="rounded-lg border border-border/30 bg-muted/20 px-2.5 py-1.5">
-            <p className="text-[0.6875rem] text-muted-foreground truncate group-hover:text-foreground/90">
+          <div className="rounded-md border border-[#214226]/10 bg-[#214226]/5 px-2.5 py-1">
+            <p className="text-[0.6875rem] font-semibold text-[#214226] truncate">
               {sheetName}
             </p>
           </div>

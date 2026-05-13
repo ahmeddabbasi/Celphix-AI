@@ -26,18 +26,31 @@ const GENDER_COLORS: Record<string, string> = {
   Female: "bg-success/10 text-success border-success/20",
 };
 
-function GenderAvatarIcon({ gender }: { gender: string }) {
-  const g = gender.trim().toLowerCase();
-  const mark = g.startsWith("f") ? "F" : g.startsWith("m") ? "M" : null;
+function getAvatarIndex(id: string) {
+  let sum = 0;
+  for (let i = 0; i < id.length; i++) {
+    sum += id.charCodeAt(i);
+  }
+  return (sum % 6) + 1; // 1 to 6
+}
+
+function VoiceAvatar({ voice }: { voice: Voice }) {
+  const g = voice.gender.trim().toLowerCase();
+  const isFemale = g.startsWith("f");
+  const folder = isFemale ? "female" : "man";
+  const index = getAvatarIndex(voice.speakerId || voice.displayName || "");
+  const src = `/${folder}/${index}.png`;
+
   return (
-    <div className="relative">
-      <UserRound className="h-5 w-5" />
-      {mark ? (
-        <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-background/80 border border-border px-1 text-[0.625rem] font-semibold leading-none text-muted-foreground">
-          {mark}
-        </span>
-      ) : null}
-    </div>
+    <img 
+      src={src} 
+      alt={voice.displayName} 
+      className="w-full h-full object-cover rounded-full bg-muted/20"
+      onError={(e) => {
+        // Fallback if image fails to load
+        (e.target as HTMLImageElement).style.display = 'none';
+      }}
+    />
   );
 }
 
@@ -70,17 +83,18 @@ export function VoiceCard({ voice }: VoiceCardProps) {
         <div className="flex items-center gap-3">
           <div
             className={[
-              "voice-logo flex shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+              "voice-logo flex shrink-0 items-center justify-center rounded-full text-sm font-semibold overflow-hidden relative",
               active
                 ? "bg-primary text-primary-foreground"
                 : "bg-primary/10 text-primary group-hover:bg-primary/20",
             ].join(" ")}
           >
             {active ? (
-              <Volume2 className="h-5 w-5 animate-pulse" />
-            ) : (
-              <GenderAvatarIcon gender={voice.gender} />
-            )}
+              <div className="absolute inset-0 flex items-center justify-center bg-primary text-primary-foreground z-10 rounded-full">
+                <Volume2 className="h-5 w-5 animate-pulse" />
+              </div>
+            ) : null}
+            <VoiceAvatar voice={voice} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold text-foreground leading-tight">

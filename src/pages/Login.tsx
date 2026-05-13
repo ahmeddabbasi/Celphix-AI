@@ -5,6 +5,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { googleSignIn } from "@/lib/auth";
+import { devAuth } from "@/lib/dev/dev-auth";
+import { devConfig } from "@/lib/dev/dev-config";
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || "";
 
@@ -69,6 +71,13 @@ export default function Login() {
     setError("");
     setIsLoading(true);
     try {
+      if (devConfig.isDevMode()) {
+        devAuth.initDevSession();
+        const token = localStorage.getItem("access_token") ?? "";
+        await routeAfterLogin(token);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         credentials: "include", // receive HttpOnly refresh_token cookie
@@ -103,6 +112,12 @@ export default function Login() {
     setError("");
     setIsGoogleLoading(true);
     try {
+      if (devConfig.isDevMode()) {
+        devAuth.initDevSession();
+        const token = localStorage.getItem("access_token") ?? "";
+        await routeAfterLogin(token);
+        return;
+      }
       await googleSignIn(credentialResponse.credential);
       const token = localStorage.getItem("access_token") ?? "";
       await routeAfterLogin(token);

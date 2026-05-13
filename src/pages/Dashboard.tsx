@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   useDashboardSummary,
   useDashboardAssistantsKpis,
+  useDashboardAssistantsList,
   type DashboardWindow,
 } from "@/hooks/use-dashboard-queries";
 import { ActivityTrendsChart } from "@/components/dashboard/ActivityTrendsChart";
@@ -94,6 +95,7 @@ export default function Dashboard() {
 
   const summaryQ    = useDashboardSummary(window);
   const assistantsQ = useDashboardAssistantsKpis(window);
+  const assistantsListQ = useDashboardAssistantsList();
 
   const summary    = (summaryQ.data ?? null) as DashboardSummaryResponse | null;
   const assistants = useMemo(
@@ -113,7 +115,7 @@ export default function Dashboard() {
         </div>
 
         {/* Period filter */}
-        <div className="glass inline-flex rounded-[16px] p-1.5 gap-1 shadow-elevated">
+        <div className="inline-flex rounded-[16px] p-1 gap-1">
           {WINDOWS.map((w) => (
             <button
               key={w.value}
@@ -121,8 +123,8 @@ export default function Dashboard() {
               className={cn(
                 "rounded-[12px] px-4 py-2 text-sm font-semibold transition-[transform,background-color,color,box-shadow] duration-300 ease-spring active:scale-[0.97]",
                 window === w.value
-                  ? "bg-background/70 text-foreground shadow-ambient"
-                  : "text-muted-foreground/80 hover:text-foreground",
+                  ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20"
+                  : "bg-primary text-primary-foreground/90 hover:opacity-80 transition-opacity",
               )}
             >
               {w.label}
@@ -134,10 +136,10 @@ export default function Dashboard() {
       {/* ── Summary metrics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         <StatCard
-          label="Total Calls"
-          value={summary?.calls ?? "—"}
-          icon={PhoneCall}
-          loading={summaryQ.isLoading}
+          label="Total Assistants"
+          value={assistantsListQ.data?.assistants?.length ?? "—"}
+          icon={Bot}
+          loading={assistantsListQ.isLoading}
         />
         <StatCard
           label="Total Time"

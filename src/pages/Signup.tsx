@@ -6,6 +6,8 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { googleSignIn } from "@/lib/auth";
 import { getApiUrl } from "@/lib/api";
+import { devAuth } from "@/lib/dev/dev-auth";
+import { devConfig } from "@/lib/dev/dev-config";
 
 function apiUrl(path: string) {
   const base = getApiUrl();
@@ -105,6 +107,13 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
+      if (devConfig.isDevMode()) {
+        devAuth.initDevSession();
+        const token = localStorage.getItem("access_token") ?? "";
+        await routeAfterLogin(token);
+        return;
+      }
+
       const response = await fetch(apiUrl("/signup"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,6 +147,12 @@ export default function Signup() {
     setError("");
     setIsGoogleLoading(true);
     try {
+      if (devConfig.isDevMode()) {
+        devAuth.initDevSession();
+        const token = localStorage.getItem("access_token") ?? "";
+        await routeAfterLogin(token);
+        return;
+      }
       await googleSignIn(credentialResponse.credential);
       const token = localStorage.getItem("access_token") ?? "";
       const uname = tryExtractUsernameFromJwt(token);

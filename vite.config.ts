@@ -106,7 +106,10 @@ export default defineConfig(({ mode }) => {
           "/logout": httpProxy,
           "/auth": httpProxy,
           "/dashboard": httpProxy,
-          "/analytics": httpProxy,
+          // Only proxy analytics to backend if not using mock API in dev mode
+          ...(env.VITE_DEV_MODE === "true" && env.VITE_USE_MOCK_API === "true"
+            ? {}
+            : { "/analytics": httpProxy }),
           "/crm": httpProxy,
           "/dialing-data": httpProxy,
           "/preferences": httpProxy,

@@ -139,9 +139,12 @@ function fmtDateTime(iso: string | null | undefined) {
 function fmtDurationSeconds(seconds: number | null) {
   if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return "—";
   const s = Math.floor(seconds);
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${String(r).padStart(2, "0")}`;
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  if (hrs > 0) return `${hrs}h ${mins.toString().padStart(2, "0")}m`;
+  if (mins > 0) return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+  return `${secs}s`;
 }
 
 function diffSeconds(startIso: string | null | undefined, endIso: string | null | undefined) {

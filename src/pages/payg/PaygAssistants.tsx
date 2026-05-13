@@ -107,11 +107,14 @@ function AssistantCard({ a }: { a: PaygAssistant }) {
     <Card
       className={cn(
         "relative overflow-hidden aspect-square",
-        "bg-gradient-to-br from-primary/10 to-card",
-        "border border-border/20 shadow-elevated",
+        "bg-card shadow-sm",
         "flex flex-col justify-between p-4",
         "cursor-pointer",
-        "transition-[transform,box-shadow] duration-300 ease-spring",
+        "transition-all duration-300 ease-spring",
+        a.is_active
+          ? "border-2 border-primary/20 bg-gradient-to-b from-primary/5 to-transparent hover:border-primary hover:shadow-lg hover:shadow-primary/10"
+          : "border-2 border-accent/30 bg-gradient-to-b from-accent/10 to-transparent hover:border-accent hover:shadow-lg hover:shadow-accent/20",
+        "hover:-translate-y-1",
       )}
       role="button"
       tabIndex={0}
@@ -123,6 +126,12 @@ function AssistantCard({ a }: { a: PaygAssistant }) {
         }
       }}
     >
+      <div
+        className={cn(
+          "absolute inset-x-0 top-0 h-1.5 transition-colors",
+          a.is_active ? "bg-primary" : "bg-accent",
+        )}
+      />
       <Button
         type="button"
         variant="destructive"
@@ -154,9 +163,9 @@ function AssistantCard({ a }: { a: PaygAssistant }) {
         {a.is_in_call ? (
           <PhoneCall className="h-5 w-5 text-primary mb-2" />
         ) : a.is_active ? (
-          <Phone className="h-5 w-5 text-primary/80 mb-2" />
+          <Phone className="h-5 w-5 text-primary mb-2" />
         ) : (
-          <PhoneOff className="h-5 w-5 text-muted-foreground mb-2" />
+          <PhoneOff className="h-5 w-5 text-accent mb-2" />
         )}
         <p className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
           {a.display_name}

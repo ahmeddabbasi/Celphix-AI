@@ -11,6 +11,7 @@ import {
   BarChart3,
   Calendar as CalendarIcon,
   Mic2,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink } from "@/components/NavLink";
@@ -33,6 +34,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { title: "Dashboard",  url: "/",          icon: LayoutDashboard },
   { title: "Assistants", url: "/assistants", icon: Bot             },
+  { title: "Automation", url: "/automation", icon: Zap             },
   { title: "Voices",     url: "/voices",     icon: Mic2            },
   { title: "Dialing Data", url: "/dialing-data", icon: Users       },
   { title: "CRM",        url: "/crm",        icon: Users           },
@@ -91,7 +93,7 @@ export function AppSidebar() {
                       to={item.url}
                       end={item.url === "/"}
                       className={cn(
-                        "flex min-h-[36px] items-center rounded-[12px] py-1.5 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                        "flex min-h-[36px] items-center rounded-[12px] py-1.5 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-300 ease-in-out hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
                         collapsed ? "justify-center px-0" : "gap-2 px-3",
                       )}
                       activeClassName="bg-sidebar-primary/40 text-sidebar-primary-foreground"
@@ -125,7 +127,7 @@ export function AppSidebar() {
                     setNumbersExpanded(!numbersExpanded);
                   }}
                   className={cn(
-                    "flex min-h-[36px] items-center rounded-[12px] py-1.5 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                    "flex min-h-[36px] items-center rounded-[12px] py-1.5 text-sm font-semibold text-sidebar-foreground/90 transition-[background-color,color,transform,opacity] duration-300 ease-in-out hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
                     collapsed ? "justify-center px-0" : "gap-2 px-3",
                   )}
                 >
@@ -157,7 +159,7 @@ export function AppSidebar() {
                       <SidebarMenuButton asChild isActive={location.pathname === n.url} tooltip={n.title}>
                         <NavLink
                           to={n.url}
-                          className="flex min-h-[36px] items-center gap-2 rounded-[12px] px-3 py-1.5 text-sm font-semibold text-sidebar-foreground/80 transition-[background-color,color] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground"
+                          className="flex min-h-[36px] items-center gap-2 rounded-[12px] px-3 py-1.5 text-sm font-semibold text-sidebar-foreground/80 transition-[background-color,color] duration-300 ease-in-out hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground"
                           activeClassName="bg-sidebar-primary/40 text-sidebar-primary-foreground"
                         >
                           <span className="text-[0.625rem] w-4 text-center">•</span>
@@ -179,10 +181,10 @@ export function AppSidebar() {
           <button
             onClick={() => navigate("/settings")}
             title="Settings"
-            className={
-              "w-full flex min-h-[36px] items-center gap-2 rounded-[12px] px-2.5 py-1.5 transition-[background-color,color] duration-[280ms] ease-[cubic-bezier(0.4,0,0.2,1)] font-semibold text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground " +
-              (location.pathname === "/settings" ? "bg-sidebar-primary/40 text-sidebar-primary-foreground" : "")
-            }
+            className={cn(
+              "w-full flex min-h-[36px] items-center gap-2 rounded-[12px] px-2.5 py-1.5 transition-[background-color,color] duration-300 ease-in-out font-semibold text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+              location.pathname === "/settings" && "bg-sidebar-primary/40 text-sidebar-primary-foreground"
+            )}
           >
             <div className="h-8 w-8 rounded-full bg-sidebar-accent/50 flex items-center justify-center shrink-0">
               <User className="h-4 w-4 text-sidebar-foreground" />

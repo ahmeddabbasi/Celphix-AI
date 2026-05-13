@@ -117,6 +117,12 @@ async function trySilentRefresh(): Promise<boolean> {
  * logs in from seeing cached data that belongs to the previous user.
  */
 export async function logout(queryClient?: { clear(): void }): Promise<void> {
+  if (devConfig.isDevMode()) {
+    devAuth.clearDevSession();
+    queryClient?.clear();
+    return;
+  }
+
   const token = getAuthToken();
   const sessionId = getSessionId();
 
@@ -221,6 +227,11 @@ async function makeAuthenticatedFetchRequest(
  * Returns the username string, or throws on failure.
  */
 export async function googleSignIn(credential: string): Promise<string> {
+  if (devConfig.isDevMode()) {
+    devAuth.initDevSession();
+    return devAuth.getDevProfile().username;
+  }
+
   const response = await fetch(`${getApiUrl()}/auth/google`, {
     method: "POST",
     credentials: "include", // receive refresh_token cookie

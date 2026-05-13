@@ -314,7 +314,7 @@ export default function Analytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Leads Contacted</CardTitle>
+            <CardTitle className="text-sm font-medium">Attended Calls</CardTitle>
             <PieChartIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

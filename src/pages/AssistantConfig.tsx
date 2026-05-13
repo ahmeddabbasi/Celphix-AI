@@ -85,9 +85,12 @@ export default function AssistantConfig() {
 
   const location = useLocation();
   const isPayg = location.pathname.startsWith("/payg/");
-  const surfaceApi = isPayg ? paygApi : api;
+  const surfaceApi = useMemo(() => (isPayg ? paygApi : api), [isPayg]);
   const assistantsPath = isPayg ? "/payg/assistants" : "/assistants";
-  const assistantsWithStatsQueryKey = isPayg ? ["payg", "assistants", "with-stats"] : ["assistants", "with-stats"];
+  const assistantsWithStatsQueryKey = useMemo(
+    () => (isPayg ? ["payg", "assistants", "with-stats"] : ["assistants", "with-stats"]),
+    [isPayg]
+  );
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -348,6 +351,13 @@ export default function AssistantConfig() {
 
   // ── Voice data (public/visible voices from API) ──────────────────────
   const { data: voices } = usePublicVoices();
+  const voiceOptions = useMemo(() => {
+    return voices?.map((v) => (
+      <SelectItem key={v.speaker_id} value={v.speaker_id}>
+        {v.display_name} — {v.accent} ({v.gender})
+      </SelectItem>
+    ));
+  }, [voices]);
 
   const isDirty = useMemo(() => {
     if (!agent) return false;
@@ -1139,7 +1149,12 @@ export default function AssistantConfig() {
       micStatus === "streaming";
 
     if (!bgNoiseLocked && !configLockedNow) {
-      if (agentId) persistBgNoiseSettings(String(agentId), bgNoiseEnabled, bgNoiseVolume, bgNoiseUrl);
+      // Only persist after initial hydration from DB/localStorage is done.
+      // Without this guard, the default state (enabled=false) would overwrite
+      // the per-assistant localStorage before loadAgent finishes hydrating.
+      if (agentId && bgNoiseAssistantHydratedRef.current) {
+        persistBgNoiseSettings(String(agentId), bgNoiseEnabled, bgNoiseVolume, bgNoiseUrl);
+      }
 
       // Debounced per-assistant DB persistence.
       if (agentId && bgNoiseAssistantHydratedRef.current) {
@@ -1927,34 +1942,59 @@ export default function AssistantConfig() {
   }, []);
 
   useEffect(() => {
+    // Reset scroll to top when switching assistants
+    sectionsScrollContainerRef.current?.scrollTo(0, 0);
+    setActiveSection("test");
+  }, [agentId]);
+
+  useEffect(() => {
+    // 1. Agar UI currently loading ya error state mein hai, tou listener attach na karein
+    if (loading || error) return;
+
     const root = sectionsScrollContainerRef.current;
     if (!root) return;
 
-    const sections: Array<{ key: AssistantConfigSection; el: HTMLElement | null }> = [
-      { key: "test", el: testSectionRef.current },
-      { key: "configurations", el: configurationsSectionRef.current },
-      { key: "automation", el: automationsSectionRef.current },
-    ];
-    const valid = sections.filter((s): s is { key: AssistantConfigSection; el: HTMLElement } => !!s.el);
-    if (valid.length === 0) return;
+    const sections: Array<{ key: AssistantConfigSection; el: HTMLElement }> = [
+      testSectionRef.current && { key: "test" as const, el: testSectionRef.current },
+      configurationsSectionRef.current && { key: "configurations" as const, el: configurationsSectionRef.current },
+      automationsSectionRef.current && { key: "automation" as const, el: automationsSectionRef.current },
+    ].filter(Boolean) as Array<{ key: AssistantConfigSection; el: HTMLElement }>;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0));
-        const top = visible[0];
-        if (!top?.target) return;
+    if (sections.length === 0) return;
 
-        const next = valid.find((s) => s.el === top.target)?.key;
-        if (next) setActiveSection(next);
-      },
-      { root, threshold: [0.4, 0.6, 0.8] }
-    );
+    let rafId: number | null = null;
 
-    for (const s of valid) observer.observe(s.el);
-    return () => observer.disconnect();
-  }, []);
+    const handleScroll = () => {
+      // Throttle with rAF so we only compute once per frame
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const rootTop = root.getBoundingClientRect().top;
+
+        // Walk sections top-to-bottom; the last one whose top is at or above
+        // the container top (+ small offset) is the "current" section.
+        let bestKey: AssistantConfigSection = sections[0].key;
+        for (const s of sections) {
+          const sTop = s.el.getBoundingClientRect().top - rootTop;
+          if (sTop <= 40) {
+            // This section's top has scrolled past the container top
+            bestKey = s.key;
+          }
+        }
+
+        setActiveSection(bestKey);
+      });
+    };
+
+    root.addEventListener("scroll", handleScroll, { passive: true });
+    // Run once on mount to set initial state
+    handleScroll();
+
+    return () => {
+      root.removeEventListener("scroll", handleScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, [loading, error]);
 
   // ── Test Tab: Conversation auto-scroll ───────────────────────────────────
   const conversationScrollRef = useRef<HTMLDivElement | null>(null);
@@ -2015,7 +2055,7 @@ export default function AssistantConfig() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className={cn("h-full flex flex-col assistant-config-page", isPayg ? "payg-shell" : "cc-shell")}>
       {/* ── Header: Back + Name (left) | Start Call (right, same row) ── */}
       <div data-reveal className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -2275,15 +2315,11 @@ export default function AssistantConfig() {
                       }}
                       disabled={configLocked}
                     >
-                      <SelectTrigger className="flex-1">
+                      <SelectTrigger className="flex-1 assistant-select-trigger">
                         <SelectValue placeholder="Select voice" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {voices?.map((v) => (
-                          <SelectItem key={v.speaker_id} value={v.speaker_id}>
-                            {v.display_name} — {v.accent} ({v.gender})
-                          </SelectItem>
-                        ))}
+                      <SelectContent className="assistant-select-content">
+                        {voiceOptions}
                       </SelectContent>
                     </Select>
                     <Button
@@ -2325,7 +2361,7 @@ export default function AssistantConfig() {
                     <div className="mt-3 flex items-center gap-3">
                       <div className="w-20 text-xs text-muted-foreground">Volume</div>
                       <input
-                        className="flex-1"
+                        className="flex-1 assistant-volume-slider"
                         type="range"
                         min={0}
                         max={100}
@@ -2351,10 +2387,10 @@ export default function AssistantConfig() {
                           }}
                           disabled={!bgNoiseEnabled || bgNoiseLocked || configLocked}
                         >
-                          <SelectTrigger className="flex-1">
+                          <SelectTrigger className="flex-1 assistant-select-trigger">
                             <SelectValue placeholder={bgNoiseOptions.length ? "Select" : "No sounds found"} />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="assistant-select-content">
                             <SelectItem value="__none__">None</SelectItem>
                             {bgNoiseOptions.map((o) => (
                               <SelectItem key={o.id} value={o.url}>
@@ -2441,10 +2477,10 @@ export default function AssistantConfig() {
                     }}
                     disabled={configLocked || dialingFilesLoading}
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 assistant-select-trigger">
                       <SelectValue placeholder={dialingFilesLoading ? "Loading…" : "Select dialing file"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="assistant-select-content">
                       <SelectItem value="__none__">None</SelectItem>
                       {dialingFiles.map((f) => (
                         <SelectItem key={f.id} value={String(f.id)}>
@@ -2523,10 +2559,10 @@ export default function AssistantConfig() {
                 <div className="space-y-2 pl-2">
                   <label className="text-sm font-semibold">Routing Logic</label>
                   <Select value={routingLogic} onValueChange={(v) => setRoutingLogic(v as "Time" | "Text")}>
-                    <SelectTrigger className="py-1.5 text-sm">
+                    <SelectTrigger className="py-1.5 text-sm assistant-select-trigger">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="assistant-select-content">
                       <SelectItem value="Time">Time-based</SelectItem>
                       <SelectItem value="Text">Text-based</SelectItem>
                     </SelectContent>
@@ -2641,10 +2677,10 @@ Route if sentiment is negative or frustrated.'
                   <div className="space-y-2 pl-2">
                     <label className="text-sm font-semibold">Reference Site/Source</label>
                     <Select value={contextSource} onValueChange={setContextSource}>
-                      <SelectTrigger className="py-1.5 text-sm">
+                      <SelectTrigger className="py-1.5 text-sm assistant-select-trigger">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="assistant-select-content">
                         <SelectItem value="FreeQuoter Site">FreeQuoter Site</SelectItem>
                       </SelectContent>
                     </Select>

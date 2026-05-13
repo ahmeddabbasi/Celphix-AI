@@ -51,7 +51,7 @@ export const devConfig = {
    * Always false in production builds.
    */
   isDevMode(): boolean {
-    return isFeatureEnabled(import.meta.env.VITE_DEV_MODE as string);
+    return isDevelopmentBuild() && isFeatureEnabled(import.meta.env.VITE_DEV_MODE as string);
   },
 
   /**

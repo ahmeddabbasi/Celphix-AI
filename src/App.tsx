@@ -9,12 +9,14 @@ import { PaygLayout } from "@/components/layout/payg/PaygLayout";
 import { ProtectedRoute, CCProtectedRoute } from "@/components/ProtectedRoute";
 import { useInactivityTimeout } from "@/hooks/use-inactivity-timeout";
 import { clearAuthToken, initializeDevelopmentMode } from "@/lib/auth";
+import { devConfig } from "@/lib/dev/dev-config";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // ── Command Center pages ───────────────────────────────────────────────────────
 import Dashboard from "./pages/Dashboard";
 import Assistants from "./pages/Assistants";
 import AssistantConfig from "./pages/AssistantConfig";
+import Automation from "./pages/Automation";
 import Calls from "./pages/Calls";
 import Crm from "./pages/Crm";
 import DialingData from "./pages/DialingData";
@@ -72,6 +74,10 @@ const AppContent = () => {
   }, []);
 
   useEffect(() => {
+    if (!devConfig.isDevMode()) {
+      return;
+    }
+
     // Per user request: force logout on page reload (not on in-app navigation).
     // This effect runs once on initial mount.
     // We guard behind the Navigation Timing API so forward/back cache restores won't log out.
@@ -107,6 +113,7 @@ const AppContent = () => {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/assistants" element={<Assistants />} />
+        <Route path="/automation" element={<Automation />} />
         <Route path="/assistants/:id" element={<AssistantConfig />} />
         <Route path="/calls" element={<Calls />} />
         <Route path="/dialing-data" element={<DialingData />} />
@@ -133,6 +140,7 @@ const AppContent = () => {
       >
         <Route index element={<PaygDashboard />} />
         <Route path="assistants" element={<PaygAssistants />} />
+        <Route path="automation" element={<Automation />} />
         <Route path="assistants/:id" element={<AssistantConfig />} />
         <Route path="calls" element={<PaygCalls />} />
         <Route path="analytics" element={<PaygAnalytics />} />

@@ -475,7 +475,17 @@ class MockApiFactory {
       { id: 5, speaker_id: "p229", display_name: "James", gender: "Male", accent: "American", visible: true, sample_url: "/voice-samples/p229.wav" },
       { id: 6, speaker_id: "p230", display_name: "Sarah", gender: "Female", accent: "American", visible: true, sample_url: "/voice-samples/p230.wav" },
       { id: 7, speaker_id: "p231", display_name: "Michael", gender: "Male", accent: "American", visible: true, sample_url: "/voice-samples/p231.wav" },
-      { id: 8, speaker_id: "p232", display_name: "Emma", gender: "Female", accent: "American", visible: false, sample_url: "/voice-samples/p232.wav" },
+      { id: 8, speaker_id: "p232", display_name: "Emma", gender: "Female", accent: "American", visible: true, sample_url: "/voice-samples/p232.wav" },
+      { id: 9, speaker_id: "v001", display_name: "Oliver", gender: "Male", accent: "Australian", visible: true, sample_url: "/voice-samples/v001.wav" },
+      { id: 10, speaker_id: "v002", display_name: "Sophia", gender: "Female", accent: "Australian", visible: true, sample_url: "/voice-samples/v002.wav" },
+      { id: 11, speaker_id: "v003", display_name: "Liam", gender: "Male", accent: "Canadian", visible: true, sample_url: "/voice-samples/v003.wav" },
+      { id: 12, speaker_id: "v004", display_name: "Isabella", gender: "Female", accent: "Canadian", visible: true, sample_url: "/voice-samples/v004.wav" },
+      { id: 13, speaker_id: "v005", display_name: "Noah", gender: "Male", accent: "Indian", visible: true, sample_url: "/voice-samples/v005.wav" },
+      { id: 14, speaker_id: "v006", display_name: "Aria", gender: "Female", accent: "Indian", visible: true, sample_url: "/voice-samples/v006.wav" },
+      { id: 15, speaker_id: "v007", display_name: "Lucas", gender: "Male", accent: "Spanish", visible: true, sample_url: "/voice-samples/v007.wav" },
+      { id: 16, speaker_id: "v008", display_name: "Mia", gender: "Female", accent: "Spanish", visible: true, sample_url: "/voice-samples/v008.wav" },
+      { id: 17, speaker_id: "v009", display_name: "Alexander", gender: "Male", accent: "British", visible: true, sample_url: "/voice-samples/v009.wav" },
+      { id: 18, speaker_id: "v010", display_name: "Charlotte", gender: "Female", accent: "British", visible: true, sample_url: "/voice-samples/v010.wav" },
     ];
 
     return { voices };

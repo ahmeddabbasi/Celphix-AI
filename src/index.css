@@ -43,9 +43,9 @@
     --popover:             142 18% 7%;
     --popover-foreground:    0  0% 98%;
 
-    /* ── Primary — brand green ────────────────────────────────── */
-    --primary:             142 72% 42%;     /* #1db954-ish bright green              */
-    --primary-foreground:    0  0% 100%;    /* white on green button                 */
+    /* ── Primary — brand dark green ────────────────────────── */
+    --primary:             120 62% 10%;     /* #0A2A0A Dark Green                    */
+    --primary-foreground:    0  0% 100%;    /* white on dark green                   */
 
     /* ── Secondary — mid-dark green tint ─────────────────────── */
     --secondary:           142 14% 13%;
@@ -56,8 +56,8 @@
     --muted-foreground:    142  8% 52%;
 
     /* ── Accent — yellow highlight ────────────────────────────── */
-  --accent:               56 100% 50%;    /* #FFEA00 yellow                        */
-    --accent-foreground:   142 20%  6%;     /* very dark for text on yellow          */
+  --accent:               55 100% 50%;    /* #FFEA00 yellow                        */
+    --accent-foreground:   120 62%  6%;     /* very dark for text on yellow          */
 
     /* ── Semantic ─────────────────────────────────────────────── */
     --destructive:           0 65% 50%;
@@ -76,8 +76,8 @@
 
     --radius: 0.5rem;
 
-    /* Global UI scale baseline (matches 70% design density at 100% browser zoom) */
-    --ui-scale: 0.7;
+    /* Global UI scale baseline (matches 85% design density at 100% browser zoom) */
+    --ui-scale: 0.85;
 
     /* Fixed shell dimensions (rem-based for global scaling) */
     --topbar-h: 4rem;
@@ -225,7 +225,7 @@
   }
 
   html {
-    font-size: 70%;
+    font-size: 85%;
     font-family: "DM Sans", "Inter", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -557,9 +557,6 @@
   .payg-shell .topbar {
     background-color: #214226;
     color: #ffffff;
-  }
-
-  .payg-shell .topbar {
     border-bottom: 1px solid rgba(255, 255, 255, 0.18);
   }
 
@@ -624,9 +621,10 @@
   }
 
   /* Voices: Play Sample button state system */
+  /* Default: Command Center green */
   .btn--play-sample {
-    background-color: hsl(var(--accent-yellow));
-    color: hsl(var(--accent-foreground));
+    background-color: #214226 !important;
+    color: #ffffff !important;
     border: none;
     display: inline-flex;
     align-items: center;
@@ -634,17 +632,24 @@
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease, filter 0.2s ease;
   }
 
+  /* Default for PAYG: Brighter PAYG green */
+  .payg-shell .btn--play-sample {
+    background-color: #008613 !important;
+  }
+
+  /* Hover/playing: Yellow with black text */
+  .btn--play-sample:hover,
   .btn--play-sample.is-playing {
-    background-color: #214226;
-    color: #ffffff;
+    background-color: #FFEA00 !important;
+    color: #000000 !important;
   }
 
   .btn--play-sample:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.05);
   }
 
   .btn--play-sample.is-playing:hover {
-    filter: brightness(1.15);
+    filter: brightness(1.1);
   }
 
   .btn--play-sample:active {
@@ -953,16 +958,16 @@
   /* Scroll reveals (IntersectionObserver toggles data-revealed) */
   [data-reveal] {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(8px);
     will-change: opacity, transform;
   }
   [data-reveal][data-revealed="true"] {
-    animation: fadeUp 700ms var(--ease-out-expo) both;
+    animation: fadeUp 250ms var(--ease-out-expo) both;
     animation-delay: var(--reveal-delay, 0ms);
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
@@ -1004,6 +1009,166 @@
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background;
   }
+}
+
+/*
+  ── ASSISTANT CONFIG — Branded Select Dropdowns ────────────────────────
+  Green (#008613 / #214226) background with white text.
+  Selected / focused item: yellow (#FFEA00) background with black text.
+*/
+
+/* Trigger button — green bg, white text */
+.assistant-select-trigger {
+  background-color: #214226 !important;
+  border-color: #214226 !important;
+  color: #ffffff !important;
+}
+
+.assistant-select-trigger:hover {
+  background-color: #1a3520 !important;
+}
+
+.assistant-select-trigger:disabled,
+.assistant-select-trigger[data-disabled] {
+  background-color: #1a2b1e !important;
+  border-color: #1a2b1e !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+.assistant-select-trigger:disabled svg,
+.assistant-select-trigger[data-disabled] svg {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Make the chevron icon white */
+.assistant-select-trigger svg {
+  color: #ffffff !important;
+  opacity: 0.85 !important;
+}
+
+/* Dropdown panel (portaled to body) — green bg, white text */
+.assistant-select-content {
+  background-color: #214226 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  max-height: 280px !important; /* Reduced to ensure items get cut off as a scroll hint */
+}
+
+/* Viewport inherits the green background */
+.assistant-select-content [role="listbox"] {
+  background-color: #214226;
+}
+
+/* Default item — white text on green */
+.assistant-select-content [role="option"] {
+  color: #ffffff !important;
+}
+
+/* Focused / hovered item — yellow bg, black text */
+.assistant-select-content [role="option"]:focus,
+.assistant-select-content [role="option"][data-highlighted] {
+  background-color: #FFEA00 !important;
+  color: #000000 !important;
+}
+
+/* Currently selected item indicator (checkmark) — white on green, black on yellow when focused */
+.assistant-select-content [role="option"] span svg {
+  color: #ffffff !important;
+}
+
+.assistant-select-content [role="option"]:focus span svg,
+.assistant-select-content [role="option"][data-highlighted] span svg {
+  color: #000000 !important;
+}
+
+/* Scroll buttons in the dropdown (up/down arrows) */
+.assistant-select-content [data-radix-select-scroll-button],
+.assistant-select-content button:has(svg) {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  color: #FFEA00 !important; /* Yellow for prominence */
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* PAYG variant: use brighter green */
+.payg-shell .assistant-select-trigger {
+  background-color: #008613 !important;
+  border-color: #008613 !important;
+}
+
+.payg-shell .assistant-select-trigger:hover {
+  background-color: #006f10 !important;
+}
+
+/* Volume Slider — Gradient from yellow (#FFEA00) to brand green */
+.assistant-volume-slider {
+  --slider-green: #008613;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 24px;
+}
+
+.cc-shell .assistant-volume-slider {
+  --slider-green: #214226;
+}
+
+/* Webkit Track */
+.assistant-volume-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: linear-gradient(to right, #FFEA00, var(--slider-green));
+  border-radius: 3px;
+}
+
+/* Webkit Thumb */
+.assistant-volume-slider::-webkit-slider-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  appearance: none;
+  margin-top: -5px; /* Centers thumb on track */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  border: 2px solid var(--slider-green);
+  transition: transform 0.15s ease;
+}
+
+.assistant-volume-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+
+/* Firefox Track */
+.assistant-volume-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: linear-gradient(to right, #FFEA00, var(--slider-green));
+  border-radius: 3px;
+}
+
+/* Firefox Thumb */
+.assistant-volume-slider::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  border: 2px solid var(--slider-green);
+  transition: transform 0.15s ease;
+}
+
+.assistant-volume-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 

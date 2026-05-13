@@ -30,8 +30,8 @@ export function ScrollRevealManager() {
 
         element.setAttribute("data-reveal-bound", "true");
 
-        // Stagger in 60ms steps.
-        const delay = Math.min(idx, 14) * 60;
+        // Stagger in 25ms steps (fast but still has a subtle cascade feel).
+        const delay = Math.min(idx, 14) * 25;
         (element as HTMLElement).style.setProperty("--reveal-delay", `${delay}ms`);
         idx += 1;
 
@@ -58,8 +58,8 @@ export function ScrollRevealManager() {
         }
       },
       {
-        threshold: 0.18,
-        rootMargin: "0px 0px -12% 0px",
+        threshold: 0.05,
+        rootMargin: "0px 0px 0px 0px",
       },
     );
 

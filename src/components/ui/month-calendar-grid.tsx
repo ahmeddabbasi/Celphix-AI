@@ -62,20 +62,23 @@ const DayCell = React.memo(({
   return (
     <div
       className={cn(
-        "min-h-[100px] border rounded-lg p-2 cursor-pointer transition-colors",
-        "hover:bg-accent",
-        isToday && "border-primary border-2",
-        isSelected && "bg-accent"
+        "min-h-[100px] border border-[#214226] rounded-xl p-2 cursor-pointer transition-all duration-200",
+        // Current Date (Today)
+        isToday ? "bg-[#214226] text-white shadow-md scale-[1.02]" : "bg-accent/20 text-black hover:bg-[#ffea00]",
+        // Selected indicator (so user knows what they clicked)
+        isSelected && !isToday && "ring-2 ring-[#214226] ring-offset-1"
       )}
       onClick={handleClick}
     >
-      <div
-        className={cn(
-          "text-sm font-medium mb-1",
-          isToday && "text-primary font-bold"
-        )}
-      >
-        {date.getDate()}
+      <div className="flex justify-between items-start mb-1">
+        <div
+          className={cn(
+            "text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full",
+            isToday ? "text-white" : "text-black"
+          )}
+        >
+          {date.getDate()}
+        </div>
       </div>
       
       {/* Event indicators */}

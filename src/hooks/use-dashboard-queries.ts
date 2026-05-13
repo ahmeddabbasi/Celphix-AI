@@ -55,6 +55,16 @@ export function useDashboardAssistantsKpis(window: DashboardWindow = "week") {
   });
 }
 
+export function useDashboardAssistantsList() {
+  return useQuery({
+    queryKey: ["dashboard", "assistants-list"],
+    queryFn: () => api.dashboard.assistants(),
+    staleTime: DEFAULT_STALE_TIME_MS,
+    gcTime: DEFAULT_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useDashboardCalls(window: DashboardWindow, limit = 200) {
   return useQuery({
     queryKey: ["dashboard", "calls", window, limit],

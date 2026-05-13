@@ -97,9 +97,12 @@ export default function PaygDashboard() {
   function fmtDuration(seconds: number | null | undefined) {
     if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return "—";
     const s = Math.floor(seconds);
-    const m = Math.floor(s / 60);
-    const r = s % 60;
-    return `${m}:${String(r).padStart(2, "0")}`;
+    const hrs = Math.floor(s / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const secs = s % 60;
+    if (hrs > 0) return `${hrs}h ${mins.toString().padStart(2, "0")}m`;
+    if (mins > 0) return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+    return `${secs}s`;
   }
 
   const summary = summaryQ.data
@@ -149,16 +152,16 @@ export default function PaygDashboard() {
           <p className="text-sm text-muted-foreground mt-0.5">{windowLabel} overview</p>
         </div>
 
-        <div className="inline-flex rounded-lg border border-border bg-muted p-1 gap-1">
+        <div className="inline-flex rounded-[16px] p-1 gap-1">
           {WINDOWS.map((w) => (
             <button
               key={w.value}
               onClick={() => setWindow(w.value)}
               className={cn(
-                "rounded-md px-4 py-1.5 text-sm font-medium transition-all",
+                "rounded-[12px] px-4 py-2 text-sm font-semibold transition-[transform,background-color,color,box-shadow] duration-300 ease-spring active:scale-[0.97]",
                 window === w.value
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20"
+                  : "bg-primary text-primary-foreground/90 hover:opacity-80 transition-opacity",
               )}
             >
               {w.label}
@@ -168,7 +171,7 @@ export default function PaygDashboard() {
       </div>
 
       <div data-reveal className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total Calls" value={summary.calls} icon={PhoneCall} />
+        <StatCard label="Total Assistants" value={assistantsQ.data?.assistants?.length ?? "—"} icon={Bot} />
         <StatCard label="Avg Duration" value={summary.avg} icon={Clock} />
         <StatCard label="Active Assistants" value={summary.assistants} icon={Bot} />
       </div>

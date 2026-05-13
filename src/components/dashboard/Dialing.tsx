@@ -195,21 +195,25 @@ export function Dialing() {
 
               <div className="flex items-center gap-2">
                 <Select value={selectedAssistantId} onValueChange={setSelectedAssistantId}>
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-9 bg-primary text-primary-foreground border-primary hover:bg-primary/90">
                     <SelectValue placeholder="Select assistant…" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-primary text-primary-foreground border-primary">
                     {assistantsWithNumbers.length === 0 ? (
-                      <SelectItem value="__none__" disabled>
+                      <SelectItem value="__none__" disabled className="text-primary-foreground/50">
                         No assistants with linked numbers
                       </SelectItem>
                     ) : (
                       assistantsWithNumbers.map((a) => {
                         const n = numberByAssistantId.get(a.assistant_id) ?? null;
                         return (
-                          <SelectItem key={a.assistant_id} value={String(a.assistant_id)}>
+                          <SelectItem 
+                            key={a.assistant_id} 
+                            value={String(a.assistant_id)}
+                            className="focus:bg-accent focus:text-accent-foreground data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground cursor-pointer font-medium"
+                          >
                             <span className="flex items-center gap-2">
-                              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                              <Phone className="h-3.5 w-3.5 opacity-70" />
                               {assistantLabel(a, n)}
                             </span>
                           </SelectItem>

@@ -69,9 +69,13 @@ function durationSeconds(call: CallRow): number | null {
 
 function fmtDuration(sec: number | null): string {
   if (sec == null) return "—";
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const s = Math.max(0, Math.round(sec));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  if (hrs > 0) return `${hrs}h ${mins.toString().padStart(2, "0")}m`;
+  if (mins > 0) return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+  return `${secs}s`;
 }
 
 function totalDuration(rows: CallRow[]): number {
@@ -381,10 +385,9 @@ export default function Calls() {
       </div>
 
       {/* ── Stat cards ─────────────────────────────────────────────────── */}
-      <div className="grid gap-[clamp(14px,2.4vw,22px)] sm:grid-cols-3">
+      <div className="grid gap-[clamp(14px,2.4vw,22px)] sm:grid-cols-2">
         <StatCard label="Total Calls" value={filteredCalls.length} icon={PhoneCall} loading={loadingInitial} />
         <StatCard label="Total Time" value={fmtDuration(totalTimeSeconds)} icon={Clock} loading={loadingInitial} />
-        <StatCard label="Period" value={windowLabel} icon={CalendarDays} loading={false} />
       </div>
 
       {/* ── Search ─────────────────────────────────────────────────────── */}
