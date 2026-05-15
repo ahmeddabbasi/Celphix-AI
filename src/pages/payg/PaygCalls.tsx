@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { paygApi as api } from "@/lib/api";
+import { authenticatedFetch } from "@/lib/auth";
 import { isAuthenticated } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/errors";
 import {
@@ -183,7 +184,8 @@ export default function PaygCalls() {
   const [search, setSearch] = useState("");
   const [exporting, setExporting] = useState(false);
   const [playingCallId, setPlayingCallId] = useState<number | null>(null);
-  const [playingUrl, setPlayingUrl] = useState<{ callId: number; url: string } | null>(null);
+  const [playingUrl, setPlayingUrl] = useState<{ callId: number; url: string; duration_seconds?: number | null } | null>(null);
+  const playingBlobUrlRef = useRef<string | null>(null);
 
   const authed = isAuthenticated();
 
@@ -230,7 +232,17 @@ export default function PaygCalls() {
     try {
       const res = await api.dashboard.callRecordingUrl(callId);
       if (!res?.url) throw new Error("Recording URL unavailable");
-      setPlayingUrl({ callId, url: res.url });
+      const streamPath = `/api/cc/dashboard/calls/${callId}/recording-stream`;
+      if (playingBlobUrlRef.current) {
+        URL.revokeObjectURL(playingBlobUrlRef.current);
+        playingBlobUrlRef.current = null;
+      }
+      const fetchRes = await authenticatedFetch(streamPath, {});
+      if (!fetchRes.ok) throw new Error(`Stream fetch failed: ${fetchRes.status}`);
+      const blob = await fetchRes.blob();
+      const url = URL.createObjectURL(blob);
+      playingBlobUrlRef.current = url;
+      setPlayingUrl({ callId, url, duration_seconds: res.duration_seconds });
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to open recording"));
     } finally {
@@ -417,7 +429,13 @@ export default function PaygCalls() {
                           const isPlayingHere = playingUrl?.callId === c.id;
 
                           if (isPlayingHere) {
-                            return <audio className="h-8" controls autoPlay src={playingUrl?.url} />;
+                            const durText = playingUrl?.duration_seconds ? ` (${Math.round(playingUrl.duration_seconds)}s)` : '';
+                            return (
+                              <div className="space-y-1">
+                                <audio className="h-8 w-full max-w-xs" controls autoPlay src={playingUrl?.url} />
+                                <div className="text-xs text-muted-foreground">{durText}</div>
+                              </div>
+                            );
                           }
 
                           if (canPlay) {

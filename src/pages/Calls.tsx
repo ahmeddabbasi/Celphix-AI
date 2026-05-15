@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardCalls } from "@/hooks/use-dashboard-queries";
 import { api } from "@/lib/api";
+import { authenticatedFetch } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import type { DashboardWindow } from "@/hooks/use-dashboard-queries";
 import { getErrorMessage } from "@/lib/errors";
@@ -225,7 +226,8 @@ export default function Calls() {
   const { toast } = useToast();
 
   const [playingCallId, setPlayingCallId] = useState<number | null>(null);
-  const [playingUrl, setPlayingUrl] = useState<{ callId: number; url: string } | null>(null);
+  const [playingUrl, setPlayingUrl] = useState<{ callId: number; url: string; duration_seconds?: number | null } | null>(null);
+  const playingBlobUrlRef = useRef<string | null>(null);
 
   const callsQ = useDashboardCalls(timeWindow, 500);
   const loadingInitial = callsQ.isPending;
@@ -307,7 +309,19 @@ export default function Calls() {
     try {
       const res = await api.dashboard.callRecordingUrl(callId);
       if (!res?.url) throw new Error("Recording URL unavailable");
-      setPlayingUrl({ callId, url: res.url });
+      // Fetch the stream via authenticatedFetch so the Authorization header is sent
+      const streamPath = `/api/cc/dashboard/calls/${callId}/recording-stream`;
+      // Revoke previous blob URL if any
+      if (playingBlobUrlRef.current) {
+        URL.revokeObjectURL(playingBlobUrlRef.current);
+        playingBlobUrlRef.current = null;
+      }
+      const fetchRes = await authenticatedFetch(streamPath, {});
+      if (!fetchRes.ok) throw new Error(`Stream fetch failed: ${fetchRes.status}`);
+      const blob = await fetchRes.blob();
+      const url = URL.createObjectURL(blob);
+      playingBlobUrlRef.current = url;
+      setPlayingUrl({ callId, url, duration_seconds: res.duration_seconds });
     } catch (err) {
       toast({
         variant: "destructive",
@@ -504,7 +518,14 @@ export default function Calls() {
 
                     <TableCell>
                       {isPlayingHere ? (
-                        <audio className="h-8" controls autoPlay src={playingUrl?.url} />
+                        <>
+                          <audio className="h-8 w-full max-w-xs" controls autoPlay src={playingUrl?.url} />
+                          {playingUrl?.duration_seconds && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {Math.round(playingUrl.duration_seconds)}s
+                            </div>
+                          )}
+                        </>
                       ) : canPlay ? (
                         <Button
                           variant="outline"

@@ -1367,6 +1367,16 @@ export default function AssistantConfig() {
     const ctx = new AudioContextCtor({ sampleRate: 48000 });
     audioContextRef.current = ctx;
 
+    // Browsers commonly start AudioContext in "suspended" state until explicitly resumed.
+    // If we don't resume, Worklet/ScriptProcessor callbacks may never fire, so no mic frames
+    // are sent to the backend.
+    try {
+      if (ctx.state === "suspended") await ctx.resume();
+    } catch (e) {
+      // Non-fatal: some browsers block resume outside a user gesture.
+      pushEvent("mic_audio_context_resume_failed", { message: getErrorMessage(e) });
+    }
+
     const source = ctx.createMediaStreamSource(media);
     audioSourceRef.current = source;
 
