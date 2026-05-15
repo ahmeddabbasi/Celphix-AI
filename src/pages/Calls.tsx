@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardCalls } from "@/hooks/use-dashboard-queries";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 import { authenticatedFetch } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import type { DashboardWindow } from "@/hooks/use-dashboard-queries";
@@ -310,7 +310,7 @@ export default function Calls() {
       const res = await api.dashboard.callRecordingUrl(callId);
       if (!res?.url) throw new Error("Recording URL unavailable");
       // Fetch the stream via authenticatedFetch so the Authorization header is sent
-      const streamPath = `/api/cc/dashboard/calls/${callId}/recording-stream`;
+      const streamPath = `${getApiUrl()}/api/cc/dashboard/calls/${callId}/recording-stream`;
       // Revoke previous blob URL if any
       if (playingBlobUrlRef.current) {
         URL.revokeObjectURL(playingBlobUrlRef.current);

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { paygApi as api } from "@/lib/api";
+import { paygApi as api, getApiUrl } from "@/lib/api";
 import { authenticatedFetch } from "@/lib/auth";
 import { isAuthenticated } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/errors";
@@ -232,7 +232,7 @@ export default function PaygCalls() {
     try {
       const res = await api.dashboard.callRecordingUrl(callId);
       if (!res?.url) throw new Error("Recording URL unavailable");
-      const streamPath = `/api/cc/dashboard/calls/${callId}/recording-stream`;
+      const streamPath = `${getApiUrl()}/api/cc/dashboard/calls/${callId}/recording-stream`;
       if (playingBlobUrlRef.current) {
         URL.revokeObjectURL(playingBlobUrlRef.current);
         playingBlobUrlRef.current = null;
