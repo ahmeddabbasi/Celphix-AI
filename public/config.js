@@ -9,8 +9,9 @@
 (function () {
   "use strict";
 
-  const PROD_API = "https://voiceagent.rebortai.com";
-  const PROD_WS  = "wss://voiceagent.rebortai.com";
+
+  const PROD_API = "https://celphix1.duckdns.org";
+  const PROD_WS  = "wss://celphix1.duckdns.org";
 
   const isLocal =
     window.location.hostname === "localhost" ||
