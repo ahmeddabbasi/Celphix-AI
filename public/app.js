@@ -73,10 +73,10 @@ class SalesAgentApp {
         this.config = window.appConfig || window.config || {
             apiUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
                 ? window.location.origin
-                : 'https://voiceagent.rebortai.com',
+                : 'https://celphix1.duckdns.org',
             wsUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
                 ? window.location.origin.replace(/^https/, 'wss').replace(/^http/, 'ws')
-                : 'wss://voiceagent.rebortai.com'
+                : 'wss://celphix1.duckdns.org'
         };
     }
 
