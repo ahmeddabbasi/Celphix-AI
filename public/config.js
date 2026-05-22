@@ -1,7 +1,7 @@
 /**
  * Runtime configuration for the SalesAgent frontend.
  *
- * Production backend: https://voiceagent.rebortai.com  (Cloudflare → port 8000)
+ * Production backend: https://celphix1.duckdns.org  (EC2 → port 8000)
  * Local dev:          http://localhost:8000             (via Vite proxy — no CORS)
  *
  * No ngrok / serveo / tunnel URLs exist here.

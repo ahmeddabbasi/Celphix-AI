@@ -8,7 +8,7 @@ import { authenticatedFetch } from "@/lib/auth";
  *
  * In development the Vite dev-server proxy forwards all backend paths to
  * localhost:8000, so VITE_API_URL is left empty and relative URLs are used.
- * In production VITE_API_URL=https://voiceagent.rebortai.com is baked in
+ * In production VITE_API_URL=https://celphix1.duckdns.org is baked in
  * at build time (set in sound-weave-nexus/.env).
  */
 
