@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { PhoneOff, RefreshCw } from "lucide-react";
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +21,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { voices } from "@/data/voices";
-import { useUserProfile } from "@/hooks/use-user-profile";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -121,22 +119,15 @@ function AssistantCard({ a }: { a: AssistantStat }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Assistants() {
+  // ─── [PLACEHOLDER] ADD ASSISTANT REQUEST ───────────────────────────────
+  // UI-only placeholder for requesting additional assistants.
+  // Remove this block entirely when backend request flow is available.
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { data: profile } = useUserProfile();
-
   const [addOpen, setAddOpen] = useState(false);
   const [assistantCount, setAssistantCount] = useState<number>(1);
   const [requestComment, setRequestComment] = useState("");
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
-
-  const [form, setForm] = useState({
-    display_name: "",
-    agent_key: "",
-    script_text: "",
-    is_active: true,
-  });
-  const [saving, setSaving] = useState(false);
+  // ─────────────────────────────────────────────────────────────────────
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["assistants", "with-stats"],
@@ -149,53 +140,6 @@ export default function Assistants() {
 
   const assistants: AssistantStat[] = data?.assistants ?? [];
   const quota = data?.quota ?? 0;
-
-  const isAdmin = profile?.is_admin === true;
-  const hasRemainingQuota = quota > assistants.length;
-  const canCreateDirectly = isAdmin || hasRemainingQuota;
-
-  function resetForm() {
-    setForm({ display_name: "", agent_key: "", script_text: "", is_active: true });
-  }
-
-  async function handleCreateAssistant(e: React.FormEvent) {
-    e.preventDefault();
-    const agentKey = form.agent_key.trim();
-    const scriptText = form.script_text.trim();
-    const displayName = form.display_name.trim();
-
-    if (!agentKey) {
-      toast({ title: "Error", description: "Agent key is required.", variant: "destructive" });
-      return;
-    }
-    if (!scriptText) {
-      toast({ title: "Error", description: "Script text is required.", variant: "destructive" });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await api.dashboard.createAssistant({
-        agent_key: agentKey,
-        script_text: scriptText,
-        ...(displayName ? { display_name: displayName } : {}),
-        is_active: form.is_active,
-      });
-
-      toast({ title: "Success", description: "Assistant created successfully." });
-      setAddOpen(false);
-      resetForm();
-      queryClient.invalidateQueries({ queryKey: ["assistants", "with-stats"] });
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Failed to create assistant.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
 
   return (
     <div className="space-y-[clamp(1.25rem,2.4vw,2.25rem)]">
@@ -210,6 +154,7 @@ export default function Assistants() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* ─── [PLACEHOLDER] ADD ASSISTANT BUTTON (UI ONLY) ───────────────── */}
           <Button
             variant="default"
             size="lg"
@@ -219,137 +164,65 @@ export default function Assistants() {
             Add Assistant
           </Button>
 
-          <Dialog
-            open={addOpen}
-            onOpenChange={(v) => {
-              setAddOpen(v);
-              if (!v) resetForm();
-            }}
-          >
-            {canCreateDirectly ? (
-              <DialogContent className="sm:max-w-lg">
-                <form onSubmit={handleCreateAssistant}>
-                  <DialogHeader>
-                    <DialogTitle>Add Assistant</DialogTitle>
-                    <DialogDescription>Create a new assistant for your Command Center.</DialogDescription>
-                  </DialogHeader>
+          {/* Dialog (placeholder) */}
+          <Dialog open={addOpen} onOpenChange={(v) => setAddOpen(v)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Request Additional Assistants</DialogTitle>
+                <DialogDescription>
+                  Submit a request to your admin to provision more assistants. This is a UI-only placeholder.
+                </DialogDescription>
+              </DialogHeader>
 
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="cc_asst_display">Display name (optional)</Label>
-                      <Input
-                        id="cc_asst_display"
-                        value={form.display_name}
-                        onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-                        placeholder="e.g. Sales Assistant"
-                        autoComplete="off"
-                      />
-                    </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setIsSubmittingRequest(true);
+                  setTimeout(() => {
+                    setIsSubmittingRequest(false);
+                    setAddOpen(false);
+                    setAssistantCount(1);
+                    setRequestComment("");
+                    toast({ title: "Request submitted", description: "Request submitted, will be reviewed by admin" });
+                  }, 400);
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <Label>Number of assistants</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={assistantCount}
+                    onChange={(ev) => setAssistantCount(Math.max(1, Number(ev.target.value || 1)))}
+                  />
+                </div>
 
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="cc_asst_key">Agent key</Label>
-                      <Input
-                        id="cc_asst_key"
-                        value={form.agent_key}
-                        onChange={(e) => setForm((f) => ({ ...f, agent_key: e.target.value }))}
-                        placeholder="Unique agent identifier (e.g. my-sales-bot)"
-                        autoComplete="off"
-                      />
-                    </div>
+                <div>
+                  <Label>Comment / Clause</Label>
+                  <Textarea
+                    value={requestComment}
+                    onChange={(ev) => setRequestComment(ev.target.value)}
+                    placeholder="Optional note to admin"
+                    className="min-h-[100px]"
+                  />
+                </div>
 
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="cc_asst_script">Script / Instructions</Label>
-                      <Textarea
-                        id="cc_asst_script"
-                        value={form.script_text}
-                        onChange={(e) => setForm((f) => ({ ...f, script_text: e.target.value }))}
-                        placeholder="Provide the agent with context, role description, and conversational rules..."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-lg border border-border/50 p-3 shadow-ambient-subtle">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="cc_asst_active" className="text-sm font-semibold">Active</Label>
-                        <p className="text-xs text-muted-foreground">Toggle to enable or disable assistant calling capability</p>
-                      </div>
-                      <Switch
-                        id="cc_asst_active"
-                        checked={form.is_active}
-                        onCheckedChange={(checked) => setForm((f) => ({ ...f, is_active: checked }))}
-                      />
-                    </div>
+                <DialogFooter>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isSubmittingRequest}>
+                      {isSubmittingRequest ? "Submitting…" : "Submit Request"}
+                    </Button>
                   </div>
-
-                  <DialogFooter>
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => { setAddOpen(false); resetForm(); }}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={saving}>
-                        {saving ? "Creating…" : "Create Assistant"}
-                      </Button>
-                    </div>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            ) : (
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Request Additional Assistants</DialogTitle>
-                  <DialogDescription>
-                    Submit a request to your admin to provision more assistants.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setIsSubmittingRequest(true);
-                    setTimeout(() => {
-                      setIsSubmittingRequest(false);
-                      setAddOpen(false);
-                      setAssistantCount(1);
-                      setRequestComment("");
-                      toast({ title: "Request submitted", description: "Request submitted, will be reviewed by admin" });
-                    }, 400);
-                  }}
-                  className="space-y-3"
-                >
-                  <div>
-                    <Label>Number of assistants</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={assistantCount}
-                      onChange={(ev) => setAssistantCount(Math.max(1, Number(ev.target.value || 1)))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Comment / Clause</Label>
-                    <Textarea
-                      value={requestComment}
-                      onChange={(ev) => setRequestComment(ev.target.value)}
-                      placeholder="Optional note to admin"
-                      className="min-h-[100px]"
-                    />
-                  </div>
-
-                  <DialogFooter>
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={isSubmittingRequest}>
-                        {isSubmittingRequest ? "Submitting…" : "Submit Request"}
-                      </Button>
-                    </div>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            )}
+                </DialogFooter>
+              </form>
+            </DialogContent>
           </Dialog>
+          {/* ───────────────────────────────────────────────────────────────── */}
+
         </div>
       </div>
 
