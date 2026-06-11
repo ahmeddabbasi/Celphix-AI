@@ -193,7 +193,7 @@ function AddNumberDialog({
           Connect Vicidial
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <form onSubmit={handleSubmit} className="relative">
           {saving && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50 rounded-lg">
@@ -224,7 +224,7 @@ function AddNumberDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="max-h-[60vh] overflow-y-auto pr-1 grid gap-4 py-4">
             {/* Group 1: SIP Credentials */}
             <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
