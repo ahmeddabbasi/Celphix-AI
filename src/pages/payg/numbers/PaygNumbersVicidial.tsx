@@ -193,7 +193,7 @@ function AddNumberDialog({
           Connect Vicidial
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg top-[8%] translate-y-0">
         <form onSubmit={handleSubmit} className="relative">
           {saving && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50 rounded-lg">
