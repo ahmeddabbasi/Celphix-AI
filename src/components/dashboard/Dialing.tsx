@@ -24,18 +24,20 @@ type AssistantsWithStatsApiRow = {
   linked_number_label?: string | null;
 };
 
-type TwilioNumberRow = {
+type ProviderNumberRow = {
   id: number;
   phone_number: string;
   assistant_id: number | null;
   assistant_name: string | null;
   label: string | null;
+  provider: "twilio" | "vonage" | "telnyx" | "vicidial";
 };
 
-function assistantLabel(a: AssistantWithStats, n?: TwilioNumberRow | null) {
+function assistantLabel(a: AssistantWithStats, n?: ProviderNumberRow | null) {
   const name = a.display_name || (n?.assistant_name ?? `#${a.assistant_id}`);
   const phone = n?.phone_number ?? a.linked_number;
-  return phone ? `${name} — ${phone}` : name;
+  const providerSuffix = n?.provider ? ` (${n.provider.toUpperCase()})` : "";
+  return phone ? `${name} — ${phone}${providerSuffix}` : name;
 }
 
 export function Dialing() {
@@ -52,9 +54,30 @@ export function Dialing() {
     refetchOnWindowFocus: false,
   });
 
-  const numbersQ = useQuery({
+  const twilioQ = useQuery({
     queryKey: ["twilio", "numbers"],
-    queryFn: () => api.twilio.listNumbers(),
+    queryFn: () => api.twilio.listNumbers().catch(() => ({ numbers: [] })),
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const vonageQ = useQuery({
+    queryKey: ["vonage", "numbers"],
+    queryFn: () => api.vonage.listNumbers().catch(() => ({ numbers: [] })),
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const telnyxQ = useQuery({
+    queryKey: ["telnyx", "numbers"],
+    queryFn: () => api.telnyx.listNumbers().catch(() => ({ numbers: [] })),
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const vicidialQ = useQuery({
+    queryKey: ["vicidial", "numbers"],
+    queryFn: () => api.vicidial.listNumbers().catch(() => ({ numbers: [] })),
     staleTime: 15_000,
     refetchOnWindowFocus: false,
   });
@@ -78,12 +101,16 @@ export function Dialing() {
     }));
   }, [assistantsQ.data]);
 
-  const numbers: TwilioNumberRow[] = useMemo(() => {
-    return (numbersQ.data?.numbers ?? []) as TwilioNumberRow[];
-  }, [numbersQ.data]);
+  const numbers: ProviderNumberRow[] = useMemo(() => {
+    const twilioList = (twilioQ.data?.numbers ?? []).map(n => ({ ...n, provider: "twilio" as const }));
+    const vonageList = (vonageQ.data?.numbers ?? []).map(n => ({ ...n, provider: "vonage" as const }));
+    const telnyxList = (telnyxQ.data?.numbers ?? []).map(n => ({ ...n, provider: "telnyx" as const }));
+    const vicidialList = (vicidialQ.data?.numbers ?? []).map(n => ({ ...n, provider: "vicidial" as const }));
+    return [...twilioList, ...vonageList, ...telnyxList, ...vicidialList];
+  }, [twilioQ.data, vonageQ.data, telnyxQ.data, vicidialQ.data]);
 
   const numberByAssistantId = useMemo(() => {
-    const map = new Map<number, TwilioNumberRow>();
+    const map = new Map<number, ProviderNumberRow>();
     for (const n of numbers) {
       if (n.assistant_id != null) map.set(n.assistant_id, n);
     }
@@ -100,7 +127,7 @@ export function Dialing() {
     async (assistantId: number) => {
       const numberRow = numberByAssistantId.get(assistantId);
       if (!numberRow) {
-        throw new Error("No Twilio number linked to this assistant.");
+        throw new Error("No number linked to this assistant.");
       }
 
       await api.dialer.start(assistantId);
@@ -163,7 +190,12 @@ export function Dialing() {
     }
   }, [dialerStatusQ.data?.running, startDialerForAssistant, selectedAssistantId]);
 
-  const isLoading = assistantsQ.isLoading || numbersQ.isLoading;
+  const isLoading =
+    assistantsQ.isLoading ||
+    twilioQ.isLoading ||
+    vonageQ.isLoading ||
+    telnyxQ.isLoading ||
+    vicidialQ.isLoading;
 
   return (
     <Card>
@@ -240,7 +272,7 @@ export function Dialing() {
 
             {assistantsWithNumbers.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                Link a Twilio number to an assistant to enable dialing.
+                Link a number to an assistant to enable dialing.
               </p>
             )}
           </>
