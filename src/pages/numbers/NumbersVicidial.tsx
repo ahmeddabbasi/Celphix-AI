@@ -372,7 +372,7 @@ export default function NumbersVicidial() {
     setLoading(true);
     try {
       const [viciRes, asstRes, twilioRes, vonageRes, telnyxRes] = await Promise.all([
-        api.vicidial.listNumbers(),
+        api.vicidial.listNumbers().catch(() => ({ numbers: [] })),
         api.dashboard.assistants(),
         api.twilio.listNumbers().catch(() => ({ numbers: [] })),
         api.vonage.listNumbers().catch(() => ({ numbers: [] })),
