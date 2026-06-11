@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AlertCircle, Link2, Phone, Plus, Trash2, Unlink } from "lucide-react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +57,7 @@ type VicidialNumber = {
   assistant_name: string | null;
   created_at: string | null;
   updated_at: string | null;
+  status?: "connected" | "disconnected";
 };
 
 type Assistant = {
@@ -89,8 +91,10 @@ function AddNumberDialog({
   onAdded: (num: VicidialNumber) => void;
   disabled?: boolean;
 }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [validationStep, setValidationStep] = useState<'idle' | 'api' | 'sip' | 'done'>('idle');
   const [form, setForm] = useState({
     server_ip: "",
     sip_extension: "",
@@ -117,6 +121,7 @@ function AddNumberDialog({
       label: "",
       assistant_id: "",
     });
+    setValidationStep('idle');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -127,6 +132,12 @@ function AddNumberDialog({
     }
 
     setSaving(true);
+    setValidationStep('api');
+
+    const timer = setTimeout(() => {
+      setValidationStep('sip');
+    }, 1500);
+
     try {
       const res = await api.vicidial.addNumber({
         server_ip: form.server_ip.trim(),
@@ -140,13 +151,29 @@ function AddNumberDialog({
         label: form.label.trim() || null,
         assistant_id: Number(form.assistant_id),
       });
+
+      clearTimeout(timer);
+      setValidationStep('done');
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       const number = res.number as VicidialNumber;
       onAdded(number);
-      toast.success(`Vicidial configuration for ${number.phone_number} added.`);
+      toast.success("ViciDial Connected Successfully!");
       setOpen(false);
       reset();
+      navigate("/payg/calls");
     } catch (err) {
-      toast.error(getErrorMessage(err, "Failed to add configuration."));
+      clearTimeout(timer);
+      setValidationStep('idle');
+      const msg = getErrorMessage(err, "");
+      if (msg.includes("Could not reach ViciDial API") || msg.includes("Server IP and API credentials")) {
+        toast.error("Connection Failed: Could not reach ViciDial API. Please verify your Server IP and API credentials.");
+      } else if (msg.includes("SIP Connection Failed")) {
+        toast.error("API Verified, but SIP Connection Failed: Please check your SIP Extension/Password or ensure Port 5060 UDP is open.");
+      } else {
+        toast.error(msg || "Failed to add configuration.");
+      }
     } finally {
       setSaving(false);
     }
@@ -166,8 +193,30 @@ function AddNumberDialog({
           Connect Vicidial
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto relative">
+        <form onSubmit={handleSubmit} className="relative">
+          {saving && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50 rounded-lg">
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                <p className="text-sm font-semibold">Verifying connection...</p>
+              </div>
+              <div className="space-y-3 w-2/3 max-w-xs mt-2">
+                <div className="flex items-center gap-2.5 text-sm">
+                  <span className={`h-2.5 w-2.5 rounded-full ${validationStep === 'api' ? 'bg-yellow-500 animate-pulse' : (validationStep === 'sip' || validationStep === 'done') ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-muted'}`} />
+                  <span className={validationStep === 'api' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                    Verifying API Access...
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <span className={`h-2.5 w-2.5 rounded-full ${validationStep === 'sip' ? 'bg-yellow-500 animate-pulse' : validationStep === 'done' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-muted'}`} />
+                  <span className={validationStep === 'sip' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                    Verifying SIP Audio Port...
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           <DialogHeader>
             <DialogTitle>Connect Vicidial</DialogTitle>
             <DialogDescription>
@@ -644,6 +693,7 @@ export default function PaygNumbersVicidial() {
                     <TableHead>List ID</TableHead>
                     <TableHead>Linked Assistant</TableHead>
                     <TableHead>Added</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -658,10 +708,10 @@ export default function PaygNumbersVicidial() {
                       <TableCell className="text-sm font-mono">{num.list_id}</TableCell>
                       <TableCell className="text-sm">
                         {num.assistant_name ? (
-                          <span className="inline-flex items-center gap-2">
-                            <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            {num.assistant_name}
-                          </span>
+                           <span className="inline-flex items-center gap-2">
+                             <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                             {num.assistant_name}
+                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-2 text-muted-foreground">
                             <Unlink className="h-3.5 w-3.5" />
@@ -670,6 +720,20 @@ export default function PaygNumbersVicidial() {
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{fmtDate(num.created_at)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`inline-block h-2.5 w-2.5 rounded-full ${
+                              num.status === "connected"
+                                ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"
+                                : "bg-rose-500"
+                            }`}
+                          />
+                          <span className="text-xs font-medium capitalize">
+                            {num.status === "connected" ? "Connected" : "Disconnected"}
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <LinkAssistantDialog
