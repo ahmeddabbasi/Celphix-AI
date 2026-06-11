@@ -25,6 +25,7 @@ import Calendar from "./pages/Calendar";
 import NumbersTwilio from "./pages/numbers/NumbersTwilio";
 import NumbersVonage from "./pages/numbers/NumbersVonage";
 import NumbersTelnyx from "./pages/numbers/NumbersTelnyx";
+import NumbersVicidial from "./pages/numbers/NumbersVicidial";
 import SuperAdminPortal from "./pages/SuperAdminPortalOptimized";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -41,6 +42,7 @@ import PaygVoices from "./pages/payg/PaygVoices";
 import PaygNumbersTwilio from "./pages/payg/numbers/PaygNumbersTwilio";
 import PaygNumbersVonage from "./pages/payg/numbers/PaygNumbersVonage";
 import PaygNumbersTelnyx from "./pages/payg/numbers/PaygNumbersTelnyx";
+import PaygNumbersVicidial from "./pages/payg/numbers/PaygNumbersVicidial";
 import PaygSettings from "./pages/payg/PaygSettings.tsx";
 
 import { useEffect } from "react";
@@ -125,6 +127,7 @@ const AppContent = () => {
         <Route path="/numbers/twilio" element={<NumbersTwilio />} />
         <Route path="/numbers/vonage" element={<NumbersVonage />} />
         <Route path="/numbers/telnyx" element={<NumbersTelnyx />} />
+        <Route path="/numbers/vicidial" element={<NumbersVicidial />} />
         <Route path="/voices" element={<Voices />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
@@ -149,6 +152,7 @@ const AppContent = () => {
         <Route path="numbers/twilio" element={<PaygNumbersTwilio />} />
         <Route path="numbers/vonage" element={<PaygNumbersVonage />} />
         <Route path="numbers/telnyx" element={<PaygNumbersTelnyx />} />
+        <Route path="numbers/vicidial" element={<PaygNumbersVicidial />} />
         <Route path="settings" element={<PaygSettings />} />
       </Route>
 

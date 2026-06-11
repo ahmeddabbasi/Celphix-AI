@@ -47,6 +47,7 @@ const numbersItems = [
   { title: "Twilio", url: "/numbers/twilio" },
   { title: "Vonage", url: "/numbers/vonage" },
   { title: "Telnyx", url: "/numbers/telnyx" },
+  { title: "Vicidial", url: "/numbers/vicidial" },
 ];
 
 export function AppSidebar() {

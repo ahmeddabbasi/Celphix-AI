@@ -531,6 +531,54 @@ function makeTelnyxApi(prefix: string) {
   };
 }
 
+function makeVicidialApi(prefix: string) {
+  return {
+    listNumbers: () =>
+      request<{
+        numbers: Array<{
+          id: number;
+          user_id: number;
+          interface_type?: string;
+          campaign_id: string;
+          list_id: string;
+          phone_number: string;
+          label: string | null;
+          assistant_id: number | null;
+          assistant_name: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        }>;
+      }>("GET", scopedPath(prefix, "/vicidial/numbers")),
+
+    addNumber: (body: {
+      server_ip: string;
+      sip_extension: string;
+      sip_password: string;
+      api_user: string;
+      api_password: string;
+      campaign_id: string;
+      list_id: string;
+      phone_number: string;
+      label: string | null;
+      assistant_id: number | null;
+    }) =>
+      request<{ number: unknown }>("POST", scopedPath(prefix, "/vicidial/numbers"), body),
+
+    deleteNumber: (numberId: number) =>
+      request<{
+        ok: boolean;
+        unlinked_assistant: { id: number; name: string | null } | null;
+      }>("DELETE", scopedPath(prefix, `/vicidial/numbers/${numberId}`)),
+
+    linkAssistant: (numberId: number, assistantId: number | null) =>
+      request<{ number: unknown }>(
+        "PATCH",
+        scopedPath(prefix, `/vicidial/numbers/${numberId}/assistant`),
+        { assistant_id: assistantId },
+      ),
+  };
+}
+
 function makeDialerApi(prefix: string) {
   return {
     start: (assistantId: number) =>
@@ -735,6 +783,7 @@ export const api = {
   twilio: makeTwilioApi(CC_PREFIX),
   vonage: makeVonageApi(CC_PREFIX),
   telnyx: makeTelnyxApi(CC_PREFIX),
+  vicidial: makeVicidialApi(CC_PREFIX),
 
   dialer: makeDialerApi(CC_PREFIX),
 };
@@ -748,6 +797,7 @@ export const paygApi = {
   twilio: makeTwilioApi(PAYG_PREFIX),
   vonage: makeVonageApi(PAYG_PREFIX),
   telnyx: makeTelnyxApi(PAYG_PREFIX),
+  vicidial: makeVicidialApi(PAYG_PREFIX),
   dialer: makeDialerApi(PAYG_PREFIX),
   dialingData: makeDialingDataApi(PAYG_PREFIX),
 };

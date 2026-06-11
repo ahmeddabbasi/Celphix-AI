@@ -49,6 +49,7 @@ const numbersItems = [
   { title: "Twilio", url: "/payg/numbers/twilio" },
   { title: "Vonage", url: "/payg/numbers/vonage" },
   { title: "Telnyx", url: "/payg/numbers/telnyx" },
+  { title: "Vicidial", url: "/payg/numbers/vicidial" },
 ];
 
 export function PaygSidebar() {
