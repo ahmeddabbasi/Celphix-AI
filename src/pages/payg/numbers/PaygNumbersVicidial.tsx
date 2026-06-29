@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Link2, Phone, Plus, Trash2, Unlink } from "lucide-react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -405,6 +405,338 @@ function AddNumberDialog({
   );
 }
 
+function EditNumberDialog({
+  numberId,
+  open,
+  onOpenChange,
+  assistants,
+  linkedAssistantIds,
+  onUpdated,
+}: {
+  numberId: number | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  assistants: Assistant[];
+  linkedAssistantIds: Set<number>;
+  onUpdated: (num: VicidialNumber) => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [validationStep, setValidationStep] = useState<'idle' | 'api' | 'sip' | 'done'>('idle');
+  const [form, setForm] = useState({
+    server_ip: "",
+    sip_extension: "",
+    sip_password: "",
+    api_user: "",
+    api_password: "",
+    campaign_id: "",
+    list_id: "",
+    phone_number: "",
+    label: "",
+    assistant_id: "",
+  });
+
+  useEffect(() => {
+    if (open && numberId) {
+      setLoading(true);
+      api.vicidial
+        .getNumberDetails(numberId)
+        .then((details) => {
+          setForm({
+            server_ip: details.server_ip || "",
+            sip_extension: details.sip_extension || "",
+            sip_password: details.sip_password || "",
+            api_user: details.api_user || "",
+            api_password: details.api_password || "",
+            campaign_id: details.campaign_id || "",
+            list_id: details.list_id || "",
+            phone_number: details.phone_number || "",
+            label: details.label || "",
+            assistant_id: details.assistant_id != null ? String(details.assistant_id) : "",
+          });
+          setLoading(false);
+        })
+        .catch((err) => {
+          toast.error(getErrorMessage(err, "Failed to load configuration details."));
+          onOpenChange(false);
+        });
+    }
+  }, [open, numberId, onOpenChange]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!numberId) return;
+
+    if (!form.assistant_id || form.assistant_id === "__none__") {
+      toast.error("Please select an assistant to link to this configuration.");
+      return;
+    }
+
+    setSaving(true);
+    setValidationStep('api');
+
+    const timer = setTimeout(() => {
+      setValidationStep('sip');
+    }, 1500);
+
+    try {
+      const res = await api.vicidial.updateNumber(numberId, {
+        server_ip: form.server_ip.trim(),
+        sip_extension: form.sip_extension.trim(),
+        sip_password: form.sip_password,
+        api_user: form.api_user.trim(),
+        api_password: form.api_password,
+        campaign_id: form.campaign_id.trim(),
+        list_id: form.list_id.trim(),
+        phone_number: form.phone_number.trim(),
+        label: form.label.trim() || null,
+        assistant_id: Number(form.assistant_id),
+      });
+
+      clearTimeout(timer);
+      setValidationStep('done');
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const updated = res.number as VicidialNumber;
+      onUpdated(updated);
+      toast.success("ViciDial Configuration Updated Successfully!");
+      onOpenChange(false);
+    } catch (err) {
+      clearTimeout(timer);
+      setValidationStep('idle');
+      const msg = getErrorMessage(err, "");
+      if (msg.includes("Could not reach ViciDial API") || msg.includes("Server IP and API credentials")) {
+        toast.error("Connection Failed: Could not reach ViciDial API. Please verify your Server IP and API credentials.");
+      } else if (msg.includes("SIP Connection Failed")) {
+        toast.error("API Verified, but SIP Connection Failed: Please check your SIP Extension/Password or ensure Port 5060 UDP is open.");
+      } else {
+        toast.error(msg || "Failed to update configuration.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg top-[8%] translate-y-0">
+        <form onSubmit={handleSubmit} className="relative">
+          {saving && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50 rounded-lg">
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                <p className="text-sm font-semibold">Verifying connection...</p>
+              </div>
+              <div className="space-y-3 w-2/3 max-w-xs mt-2">
+                <div className="flex items-center gap-2.5 text-sm">
+                  <span className={`h-2.5 w-2.5 rounded-full ${validationStep === 'api' ? 'bg-yellow-500 animate-pulse' : (validationStep === 'sip' || validationStep === 'done') ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-muted'}`} />
+                  <span className={validationStep === 'api' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                    Verifying API Access...
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <span className={`h-2.5 w-2.5 rounded-full ${validationStep === 'sip' ? 'bg-yellow-500 animate-pulse' : validationStep === 'done' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-muted'}`} />
+                  <span className={validationStep === 'sip' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                    Verifying SIP Audio Port...
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogHeader>
+            <DialogTitle>Edit Vicidial Configuration</DialogTitle>
+            <DialogDescription>
+              Modify your Vicidial SIP and API credentials. Credentials are encrypted at rest.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[60vh] overflow-y-auto pr-1 grid gap-4 py-4">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                <span>Loading configuration details...</span>
+              </div>
+            ) : (
+              <>
+                {/* Group 1: SIP Credentials */}
+                <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    1. SIP Audio Connection (The Voice)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid gap-1.5 md:col-span-2">
+                      <Label htmlFor="edit_payg_vicidial_server_ip">Vicidial Server IP / Hostname</Label>
+                      <Input
+                        id="edit_payg_vicidial_server_ip"
+                        placeholder="e.g. 192.168.100.5 or dialer.theircompany.com"
+                        value={form.server_ip}
+                        onChange={(e) => setForm((f) => ({ ...f, server_ip: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit_payg_vicidial_sip_ext">SIP Extension</Label>
+                      <Input
+                        id="edit_payg_vicidial_sip_ext"
+                        placeholder="e.g. 1001"
+                        value={form.sip_extension}
+                        onChange={(e) => setForm((f) => ({ ...f, sip_extension: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit_payg_vicidial_sip_pass">SIP Password</Label>
+                      <Input
+                        id="edit_payg_vicidial_sip_pass"
+                        type="password"
+                        placeholder="SIP Password"
+                        value={form.sip_password}
+                        onChange={(e) => setForm((f) => ({ ...f, sip_password: e.target.value }))}
+                        required
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Group 2: API Credentials */}
+                <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    2. API Credentials (The Brains / Dispositions)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit_payg_vicidial_api_user">API User</Label>
+                      <Input
+                        id="edit_payg_vicidial_api_user"
+                        placeholder="e.g. 6666"
+                        value={form.api_user}
+                        onChange={(e) => setForm((f) => ({ ...f, api_user: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit_payg_vicidial_api_pass">API Password</Label>
+                      <Input
+                        id="edit_payg_vicidial_api_pass"
+                        type="password"
+                        placeholder="API Password"
+                        value={form.api_password}
+                        onChange={(e) => setForm((f) => ({ ...f, api_password: e.target.value }))}
+                        required
+                        autoComplete="new-password"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit_payg_vicidial_campaign">Campaign ID</Label>
+                      <Input
+                        id="edit_payg_vicidial_campaign"
+                        placeholder="e.g. TESTCAMP"
+                        value={form.campaign_id}
+                        onChange={(e) => setForm((f) => ({ ...f, campaign_id: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit_payg_vicidial_list">List ID</Label>
+                      <Input
+                        id="edit_payg_vicidial_list"
+                        placeholder="e.g. 999"
+                        value={form.list_id}
+                        onChange={(e) => setForm((f) => ({ ...f, list_id: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Group 3: Details */}
+                <div className="grid gap-3">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="edit_payg_vicidial_phone">Phone Number / ID</Label>
+                    <Input
+                      id="edit_payg_vicidial_phone"
+                      placeholder="e.g. +15551234567 or 1001"
+                      value={form.phone_number}
+                      onChange={(e) => setForm((f) => ({ ...f, phone_number: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="edit_payg_vicidial_label">Label</Label>
+                    <Input
+                      id="edit_payg_vicidial_label"
+                      placeholder="e.g. Support Line, Sales Line..."
+                      value={form.label}
+                      onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="edit_payg_vicidial_assistant">Linked Assistant</Label>
+                    <Select
+                      value={form.assistant_id || "__none__"}
+                      onValueChange={(v) =>
+                        setForm((f) => ({ ...f, assistant_id: v === "__none__" ? "" : v }))
+                      }
+                    >
+                      <SelectTrigger id="edit_payg_vicidial_assistant">
+                        <SelectValue placeholder="Select an assistant…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unlinked</SelectItem>
+                        {assistants.map((a) => {
+                          const alreadyLinked = linkedAssistantIds.has(a.assistant_id) && form.assistant_id !== String(a.assistant_id);
+                          return (
+                            <SelectItem
+                              key={a.assistant_id}
+                              value={String(a.assistant_id)}
+                              disabled={alreadyLinked}
+                            >
+                              <span
+                                className={
+                                  alreadyLinked
+                                    ? "flex items-center gap-1.5 opacity-50"
+                                    : "flex items-center gap-1.5"
+                                }
+                              >
+                                {alreadyLinked ? (
+                                  <AlertCircle className="h-3 w-3 text-accent-foreground flex-shrink-0" />
+                                ) : (
+                                  <Link2 className="h-3 w-3 flex-shrink-0" />
+                                )}
+                                {a.assistant_name ?? a.agent_key ?? `#${a.assistant_id}`}
+                                {alreadyLinked && (
+                                  <span className="text-xs text-muted-foreground ml-1">(in use)</span>
+                                )}
+                              </span>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading || saving}>
+              {saving ? "Saving…" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LinkAssistantDialog({
   number,
   assistants,
@@ -526,6 +858,13 @@ function LinkAssistantDialog({
 export default function PaygNumbersVicidial() {
   const authed = isAuthenticated();
   const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  function handleRowClick(id: number) {
+    setEditingId(id);
+    setEditOpen(true);
+  }
 
   const assistantsQ = useQuery({
     queryKey: ["payg", "assistants", "list"],
@@ -699,7 +1038,11 @@ export default function PaygNumbersVicidial() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((num) => (
-                    <TableRow key={num.id}>
+                    <TableRow
+                      key={num.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleRowClick(num.id)}
+                    >
                       <TableCell className="font-mono text-sm">{num.phone_number}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {num.label ?? <span className="italic opacity-50">—</span>}
@@ -734,7 +1077,7 @@ export default function PaygNumbersVicidial() {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
                           <LinkAssistantDialog
                              number={num}
@@ -782,6 +1125,15 @@ export default function PaygNumbersVicidial() {
           </CardContent>
         </Card>
       </div>
+
+      <EditNumberDialog
+        numberId={editingId}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        assistants={assistants}
+        linkedAssistantIds={linkedAssistantIds}
+        onUpdated={handleUpdated}
+      />
     </div>
   );
 }

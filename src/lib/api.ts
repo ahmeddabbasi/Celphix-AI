@@ -576,6 +576,40 @@ function makeVicidialApi(prefix: string) {
         scopedPath(prefix, `/vicidial/numbers/${numberId}/assistant`),
         { assistant_id: assistantId },
       ),
+
+    getNumberDetails: (numberId: number) =>
+      request<{
+        id: number;
+        user_id: number;
+        interface_type: string;
+        server_ip: string;
+        sip_extension: string;
+        sip_password: string;
+        api_user: string;
+        api_password: string;
+        campaign_id: string;
+        list_id: string;
+        phone_number: string;
+        label: string | null;
+        assistant_id: number | null;
+      }>("GET", scopedPath(prefix, `/vicidial/numbers/${numberId}`)),
+
+    updateNumber: (
+      numberId: number,
+      body: {
+        server_ip: string;
+        sip_extension: string;
+        sip_password: string;
+        api_user: string;
+        api_password: string;
+        campaign_id: string;
+        list_id: string;
+        phone_number: string;
+        label: string | null;
+        assistant_id: number | null;
+      },
+    ) =>
+      request<{ number: unknown }>("PUT", scopedPath(prefix, `/vicidial/numbers/${numberId}`), body),
   };
 }
 
