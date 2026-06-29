@@ -4,6 +4,7 @@ import { PhoneCall, Users, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "@/lib/api";
+import { headlessDialerApi } from "@/lib/api/dialer";
 import { getErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +47,11 @@ export function Dialing() {
   const [dialingOne, setDialingOne] = useState(false);
 
   const selectedAssistantIdNum = Number(selectedAssistantId || 0);
+
+  const campaignId = useMemo(() => {
+    const viciNum = numbers.find(n => n.provider === "vicidial");
+    return viciNum?.campaign_id || "TEST";
+  }, [numbers]);
 
   const assistantsQ = useQuery({
     queryKey: ["assistants", "with-stats"],
@@ -137,34 +143,36 @@ export function Dialing() {
   );
 
   const handleDialAll = useCallback(async () => {
-    if (assistantsWithNumbers.length === 0) {
-      toast.error("No assistants with linked numbers.");
-      return;
-    }
-
     setDialingAll(true);
     try {
-      let ok = 0;
-      let failed = 0;
-
-      for (const a of assistantsWithNumbers) {
-        try {
-          await startDialerForAssistant(a.assistant_id);
-          ok += 1;
-        } catch {
-          failed += 1;
-        }
-      }
-
-      if (ok > 0) {
-        toast.success(`Started dialing on ${ok} assistant${ok === 1 ? "" : "s"}.`);
+      const res = await headlessDialerApi.start(campaignId);
+      if (res.success) {
+        toast.success(res.message || `Successfully started dialing for campaign ${campaignId}.`);
       } else {
-        toast.error("Unable to start dialing.");
+        toast.error(res.message || `Failed to start dialing for campaign ${campaignId}.`);
       }
+    } catch (e) {
+      toast.error(getErrorMessage(e, "Failed to start dialing."));
     } finally {
       setDialingAll(false);
     }
-  }, [assistantsWithNumbers, startDialerForAssistant]);
+  }, [campaignId]);
+
+  const handleStopAll = useCallback(async () => {
+    setDialingAll(true);
+    try {
+      const res = await headlessDialerApi.stop(campaignId);
+      if (res.success) {
+        toast.success(res.message || `Successfully stopped dialing for campaign ${campaignId}.`);
+      } else {
+        toast.error(res.message || `Failed to stop dialing for campaign ${campaignId}.`);
+      }
+    } catch (e) {
+      toast.error(getErrorMessage(e, "Failed to stop dialing."));
+    } finally {
+      setDialingAll(false);
+    }
+  }, [campaignId]);
 
   const handleDialSelected = useCallback(async () => {
     const assistantId = Number(selectedAssistantId);
@@ -218,11 +226,20 @@ export function Dialing() {
             <div className="flex flex-col gap-2">
               <Button
                 onClick={handleDialAll}
-                disabled={dialingAll || dialingOne || assistantsWithNumbers.length === 0}
+                disabled={dialingAll || dialingOne}
                 className="gap-2 btn--start-dialing"
               >
                 <Users className="h-4 w-4" />
                 {dialingAll ? "Starting…" : "Start Dialing for All"}
+              </Button>
+
+              <Button
+                onClick={handleStopAll}
+                disabled={dialingAll || dialingOne}
+                className="gap-2 btn--stop-dialing"
+              >
+                <Users className="h-4 w-4" />
+                {dialingAll ? "Stopping…" : "Stop Dialing for All"}
               </Button>
 
               <div className="flex items-center gap-2">

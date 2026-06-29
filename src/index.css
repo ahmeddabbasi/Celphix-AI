@@ -620,6 +620,60 @@
     cursor: not-allowed;
   }
 
+  /* Command Center: Stop Dialing for All button */
+  .btn--stop-dialing {
+    background-color: hsl(var(--destructive)) !important;
+    color: hsl(var(--destructive-foreground)) !important;
+    border: none !important;
+    transition: filter 0.2s ease, transform 0.15s ease;
+  }
+
+  .btn--stop-dialing:hover {
+    filter: brightness(1.15);
+  }
+
+  .btn--stop-dialing:active {
+    filter: brightness(0.9);
+    transform: scale(0.98);
+  }
+
+  .btn--stop-dialing:focus-visible {
+    outline: 3px solid rgba(220, 38, 38, 0.4);
+    outline-offset: 3px;
+  }
+
+  .btn--stop-dialing:disabled {
+    filter: grayscale(0.4) opacity(0.5);
+    cursor: not-allowed;
+  }
+
+  /* PAYG: Stop Dialing for All button */
+  .btn--stop-dialing-payg {
+    background-color: hsl(var(--destructive)) !important;
+    color: hsl(var(--destructive-foreground)) !important;
+    border: none !important;
+    transition: filter 0.2s ease, transform 0.15s ease;
+  }
+
+  .btn--stop-dialing-payg:hover {
+    filter: brightness(1.15);
+  }
+
+  .btn--stop-dialing-payg:active {
+    filter: brightness(0.9);
+    transform: scale(0.98);
+  }
+
+  .btn--stop-dialing-payg:focus-visible {
+    outline: 3px solid rgba(220, 38, 38, 0.4);
+    outline-offset: 3px;
+  }
+
+  .btn--stop-dialing-payg:disabled {
+    filter: grayscale(0.4) opacity(0.5);
+    cursor: not-allowed;
+  }
+
   /* Voices: Play Sample button state system */
   /* Default: Command Center green */
   .btn--play-sample {
