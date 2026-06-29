@@ -48,11 +48,6 @@ export function Dialing() {
 
   const selectedAssistantIdNum = Number(selectedAssistantId || 0);
 
-  const campaignId = useMemo(() => {
-    const viciNum = numbers.find(n => n.provider === "vicidial");
-    return viciNum?.campaign_id || "TEST";
-  }, [numbers]);
-
   const assistantsQ = useQuery({
     queryKey: ["assistants", "with-stats"],
     queryFn: () => api.dashboard.assistantsWithStats(),
@@ -114,6 +109,11 @@ export function Dialing() {
     const vicidialList = (vicidialQ.data?.numbers ?? []).map(n => ({ ...n, provider: "vicidial" as const }));
     return [...twilioList, ...vonageList, ...telnyxList, ...vicidialList];
   }, [twilioQ.data, vonageQ.data, telnyxQ.data, vicidialQ.data]);
+
+  const campaignId = useMemo(() => {
+    const viciNum = numbers.find(n => n.provider === "vicidial");
+    return viciNum?.campaign_id || "TEST";
+  }, [numbers]);
 
   const numberByAssistantId = useMemo(() => {
     const map = new Map<number, ProviderNumberRow>();
